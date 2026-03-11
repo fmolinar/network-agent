@@ -1,0 +1,2 @@
+[console_scripts]
+network-agent = network_agent.cli:main

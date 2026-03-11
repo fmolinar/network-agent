@@ -1,0 +1,2 @@
+networkd: link up on wlan0
+kernel: high rx_dropped observed on wlan0

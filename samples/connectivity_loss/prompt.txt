@@ -1,0 +1,1 @@
+I cannot reach internet services reliably; pages time out and packet loss looks high.

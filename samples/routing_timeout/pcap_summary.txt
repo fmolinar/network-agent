@@ -1,0 +1,3 @@
+retransmits=9
+resets=0
+dns_failures=0

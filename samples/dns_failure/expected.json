@@ -1,0 +1,5 @@
+{
+  "category": "dns",
+  "min_confidence": 0.8,
+  "expected_cause_contains": "DNS resolution"
+}

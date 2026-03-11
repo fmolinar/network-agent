@@ -1,0 +1,70 @@
+version: "3.9"
+
+name: network-agent-lab
+
+services:
+  web-ok:
+    image: nginx:1.27-alpine
+    container_name: lab-web-ok
+    networks:
+      - net_ok
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  dns-ok:
+    image: andyshinn/dnsmasq:2.86
+    container_name: lab-dns-ok
+    command: ["--no-daemon", "--log-queries", "--log-facility=-", "--server=1.1.1.1", "--server=8.8.8.8"]
+    networks:
+      net_ok:
+        ipv4_address: 172.29.0.53
+
+  probe-ubuntu:
+    image: nicolaka/netshoot:latest
+    container_name: lab-probe-ubuntu
+    command: ["sh", "-lc", "sleep infinity"]
+    dns:
+      - 172.29.0.53
+    networks:
+      net_ok:
+        ipv4_address: 172.29.0.10
+
+  probe-alpine:
+    image: nicolaka/netshoot:latest
+    container_name: lab-probe-alpine
+    command: ["sh", "-lc", "sleep infinity"]
+    dns:
+      - 172.29.0.53
+    networks:
+      net_ok:
+        ipv4_address: 172.29.0.11
+
+  probe-dns-broken:
+    image: nicolaka/netshoot:latest
+    container_name: lab-probe-dns-broken
+    command: ["sh", "-lc", "sleep infinity"]
+    dns:
+      - 203.0.113.53
+    networks:
+      net_ok:
+        ipv4_address: 172.29.0.12
+
+  probe-isolated:
+    image: nicolaka/netshoot:latest
+    container_name: lab-probe-isolated
+    command: ["sh", "-lc", "sleep infinity"]
+    networks:
+      - net_isolated
+
+networks:
+  net_ok:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.29.0.0/24
+  net_isolated:
+    driver: bridge
+    internal: true

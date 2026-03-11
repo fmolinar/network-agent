@@ -1,0 +1,2 @@
+4 packets transmitted, 4 received, 0% packet loss
+rtt min/avg/max/mdev = 12.0/14.0/16.0/1.0 ms

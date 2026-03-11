@@ -1,0 +1,1 @@
+Connectivity is intermittent and traceroute shows repeated hop timeouts.

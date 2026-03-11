@@ -1,0 +1,1 @@
+I can ping 1.1.1.1 but hostnames fail to resolve.

@@ -1,0 +1,2 @@
+resolver: temporary failure in name resolution
+application: getaddrinfo failed for api.service.local

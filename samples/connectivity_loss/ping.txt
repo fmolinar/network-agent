@@ -1,0 +1,9 @@
+PING 8.8.8.8 (8.8.8.8): 56 data bytes
+Request timeout for icmp_seq 0
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=116 time=31.1 ms
+Request timeout for icmp_seq 2
+64 bytes from 8.8.8.8: icmp_seq=3 ttl=116 time=33.0 ms
+
+--- 8.8.8.8 ping statistics ---
+4 packets transmitted, 2 packets received, 50.0% packet loss
+round-trip min/avg/max/stddev = 31.1/32.0/33.0/0.95 ms

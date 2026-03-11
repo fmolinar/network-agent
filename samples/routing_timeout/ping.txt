@@ -1,0 +1,2 @@
+10 packets transmitted, 9 received, 10% packet loss
+rtt min/avg/max/mdev = 10.0/40.0/90.0/20.0 ms
