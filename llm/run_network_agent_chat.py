@@ -44,6 +44,7 @@ def _start_llm(model: str) -> bool:
         cwd=ROOT_DIR,
         env=env,
         text=True,
+        errors="replace",
         capture_output=True,
         check=False,
     )
@@ -142,6 +143,7 @@ def main() -> int:
             cwd=ROOT_DIR,
             env=_runtime_env(),
             text=True,
+            errors="replace",
             capture_output=True,
             check=False,
         )

@@ -128,6 +128,7 @@ class NetworkAgentChatGUI:
                     cwd=ROOT_DIR,
                     env=env,
                     text=True,
+                    errors="replace",
                     capture_output=True,
                     check=False,
                 )
@@ -190,6 +191,7 @@ class NetworkAgentChatGUI:
                 cwd=ROOT_DIR,
                 env=self._runtime_env(),
                 text=True,
+                errors="replace",
                 capture_output=True,
                 check=False,
             )
