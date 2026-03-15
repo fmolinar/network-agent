@@ -2,6 +2,13 @@
 
 This folder contains architecture and extension guidance for `network-agent`.
 
+## Submission Documents
+- `report/PROJECT_REPORT.md` - full systems/research report.
+- `design/ARCHITECTURE_OVERVIEW.md` - component architecture.
+- `design/CALL_FLOW.md` - LLM/tool orchestration sequence.
+- `design/PROMPT_TEMPLATES.md` - planner/generator/validator prompt roles.
+- `validation/VALIDATION_ARTIFACTS.md` - test and constraint evidence.
+
 ## Design Principles
 - Safety-first execution model
 - Deterministic validation before any suggestion is trusted

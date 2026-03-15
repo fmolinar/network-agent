@@ -1,0 +1,276 @@
+{
+  "plan": {
+    "category": "transport",
+    "selected_checks": [
+      "pcap_summary",
+      "tcpdump_summary",
+      "logs",
+      "netstat"
+    ],
+    "rationale": "classified as transport on host_os=linux",
+    "host_os": "linux"
+  },
+  "diagnosis": {
+    "problem_summary": "Category=transport HostOS=linux. My webserver is slow; pcap summary shows many retransmissions.",
+    "candidate_causes_ranked": [
+      {
+        "title": "Transport congestion or drops causing retransmissions",
+        "confidence": 0.74,
+        "required_evidence": [
+          "pcap.retransmits",
+          "interface drops"
+        ],
+        "remediation_steps": [
+          "Inspect interface drop counters and duplex mismatches",
+          "Reduce queue pressure/QoS misconfiguration",
+          "Tune TCP settings after root cause isolation"
+        ]
+      }
+    ],
+    "confidence_score": 0.74,
+    "required_evidence": [
+      "interface drops",
+      "pcap.retransmits"
+    ],
+    "remediation_plan": [
+      "Inspect interface drop counters and duplex mismatches",
+      "Reduce queue pressure/QoS misconfiguration",
+      "Tune TCP settings after root cause isolation"
+    ],
+    "metadata": {
+      "selected_checks": [
+        "pcap_summary",
+        "tcpdump_summary",
+        "logs",
+        "netstat"
+      ],
+      "executed_checks": [
+        "pcap_summary",
+        "tcpdump_summary",
+        "logs"
+      ],
+      "missing_checks": [
+        "netstat"
+      ],
+      "host_os": "linux",
+      "generation_mode": "heuristic"
+    }
+  },
+  "validation": {
+    "valid": true,
+    "reasons": [],
+    "needs_llm_critic": false,
+    "blocked_operations": [],
+    "llm_critic": {}
+  },
+  "execution": {
+    "raw_outputs": {
+      "pcap_summary": "retransmits=42\nresets=4\ndns_failures=0\n",
+      "tcpdump_summary": "retransmits=42\nresets=4\ndns_failures=0\n",
+      "logs": "app: response latency elevated above SLO\n"
+    },
+    "parsed_outputs": {
+      "pcap_summary": {
+        "retransmits": 42,
+        "resets": 4,
+        "dns_failures": 0
+      },
+      "tcpdump_summary": {
+        "present": true
+      },
+      "logs": {
+        "dns_failure": false,
+        "tls_error": false,
+        "auth_block": false
+      }
+    },
+    "executed_checks": [
+      "pcap_summary",
+      "tcpdump_summary",
+      "logs"
+    ],
+    "missing_checks": [
+      "netstat"
+    ],
+    "host_os": "linux",
+    "network_topology": {
+      "host_os": "linux",
+      "default_gateway": null,
+      "route_count": 0,
+      "routes": [],
+      "hop_count": 3,
+      "hops": [
+        "10.0.0.1",
+        "203.0.113.1",
+        "198.51.100.2"
+      ],
+      "neighbor_count": 0,
+      "neighbors": [],
+      "interfaces": []
+    },
+    "collection_attempts": {},
+    "collection_errors": {}
+  },
+  "debug": {
+    "request_id": "31d188f9-7879-4aeb-be64-fed45f6a2fe0",
+    "started_at": "2026-03-15T21:11:53.019249+00:00",
+    "finished_at": "2026-03-15T21:11:53.019714+00:00",
+    "duration_ms": 0.466,
+    "host_os": "linux",
+    "agent_operations": [
+      {
+        "agent": "planner",
+        "operation": "plan",
+        "started_at": "2026-03-15T21:11:53.019251+00:00",
+        "input": {
+          "user_prompt": "My webserver is slow; pcap summary shows many retransmissions.",
+          "artifact_keys": [
+            "logs",
+            "pcap_summary",
+            "ping",
+            "traceroute"
+          ],
+          "host_os": "linux"
+        },
+        "finished_at": "2026-03-15T21:11:53.019429+00:00",
+        "duration_ms": 0.179,
+        "output": {
+          "category": "transport",
+          "selected_checks": [
+            "pcap_summary",
+            "tcpdump_summary",
+            "logs",
+            "netstat"
+          ],
+          "rationale": "classified as transport on host_os=linux",
+          "host_os": "linux"
+        }
+      },
+      {
+        "agent": "executor",
+        "operation": "run",
+        "started_at": "2026-03-15T21:11:53.019431+00:00",
+        "input": {
+          "selected_checks": [
+            "pcap_summary",
+            "tcpdump_summary",
+            "logs",
+            "netstat"
+          ],
+          "collect_live_stats": false,
+          "allow_config_changes": false,
+          "capture_seconds": 30,
+          "include_topology": true
+        },
+        "finished_at": "2026-03-15T21:11:53.019566+00:00",
+        "duration_ms": 0.136,
+        "output": {
+          "executed_checks": [
+            "pcap_summary",
+            "tcpdump_summary",
+            "logs"
+          ],
+          "missing_checks": [
+            "netstat"
+          ],
+          "collection_attempts": {},
+          "collection_errors": {},
+          "network_topology": {
+            "host_os": "linux",
+            "default_gateway": null,
+            "route_count": 0,
+            "routes": [],
+            "hop_count": 3,
+            "hops": [
+              "10.0.0.1",
+              "203.0.113.1",
+              "198.51.100.2"
+            ],
+            "neighbor_count": 0,
+            "neighbors": [],
+            "interfaces": []
+          }
+        }
+      },
+      {
+        "agent": "generator",
+        "operation": "generate",
+        "started_at": "2026-03-15T21:11:53.019568+00:00",
+        "input": {
+          "category": "transport",
+          "executed_checks": [
+            "pcap_summary",
+            "tcpdump_summary",
+            "logs"
+          ]
+        },
+        "finished_at": "2026-03-15T21:11:53.019639+00:00",
+        "duration_ms": 0.073,
+        "output": {
+          "problem_summary": "Category=transport HostOS=linux. My webserver is slow; pcap summary shows many retransmissions.",
+          "candidate_causes_ranked": [
+            {
+              "title": "Transport congestion or drops causing retransmissions",
+              "confidence": 0.74,
+              "required_evidence": [
+                "pcap.retransmits",
+                "interface drops"
+              ],
+              "remediation_steps": [
+                "Inspect interface drop counters and duplex mismatches",
+                "Reduce queue pressure/QoS misconfiguration",
+                "Tune TCP settings after root cause isolation"
+              ]
+            }
+          ],
+          "confidence_score": 0.74,
+          "required_evidence": [
+            "interface drops",
+            "pcap.retransmits"
+          ],
+          "remediation_plan": [
+            "Inspect interface drop counters and duplex mismatches",
+            "Reduce queue pressure/QoS misconfiguration",
+            "Tune TCP settings after root cause isolation"
+          ],
+          "metadata": {
+            "selected_checks": [
+              "pcap_summary",
+              "tcpdump_summary",
+              "logs",
+              "netstat"
+            ],
+            "executed_checks": [
+              "pcap_summary",
+              "tcpdump_summary",
+              "logs"
+            ],
+            "missing_checks": [
+              "netstat"
+            ],
+            "host_os": "linux",
+            "generation_mode": "heuristic"
+          }
+        }
+      },
+      {
+        "agent": "validator",
+        "operation": "validate",
+        "started_at": "2026-03-15T21:11:53.019641+00:00",
+        "input": {
+          "use_llm_critic": true,
+          "confidence_score": 0.74
+        },
+        "finished_at": "2026-03-15T21:11:53.019697+00:00",
+        "duration_ms": 0.057,
+        "output": {
+          "valid": true,
+          "reasons": [],
+          "needs_llm_critic": false,
+          "blocked_operations": [],
+          "llm_critic": {}
+        }
+      }
+    ]
+  }
+}
