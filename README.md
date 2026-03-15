@@ -154,6 +154,18 @@ network-agent \
   --agent-llm-base-url http://localhost:1234/v1/chat/completions
 ```
 
+Interactive offline chat launcher:
+
+macOS/Linux:
+```bash
+./llm/run_network_agent_chat.sh
+```
+
+Windows CMD:
+```bat
+llm\run_network_agent_chat.bat
+```
+
 Environment variables:
 - `NETWORK_AGENT_LLM_PROVIDER`
 - `NETWORK_AGENT_LLM_MODEL`

@@ -76,3 +76,23 @@ def test_executor_builds_topology_from_artifacts() -> None:
     assert topo["default_gateway"] == "192.168.1.1"
     assert topo["hop_count"] == 2
     assert topo["neighbor_count"] >= 1
+
+
+def test_executor_windows_ping_uses_bounded_timeout() -> None:
+    plan = PlannerPlan(
+        category=Category.CONNECTIVITY,
+        selected_checks=["ping"],
+        rationale="test",
+        host_os=HostOS.WINDOWS,
+    )
+    runner = FakeRunner()
+    executor = Executor(runner=runner)
+    result = executor.run(
+        plan,
+        artifacts={},
+        user_prompt="cannot reach 8.8.8.8",
+        collect_live_stats=True,
+    )
+
+    assert "ping" in result.executed_checks
+    assert any(call.startswith("ping -n 4 -w 1000 ") for call in runner.calls)

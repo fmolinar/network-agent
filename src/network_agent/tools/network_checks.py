@@ -10,7 +10,7 @@ from network_agent.core.safety import SafetyGate
 @dataclass(slots=True)
 class WhitelistedShellRunner:
     safety_gate: SafetyGate
-    timeout_seconds: int = 5
+    timeout_seconds: int = 20
 
     def run(self, command: str, user_approved: bool = False) -> str:
         allowed, reason = self.safety_gate.check_command(command, user_approved=user_approved)

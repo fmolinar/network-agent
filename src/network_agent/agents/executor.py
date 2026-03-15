@@ -28,7 +28,8 @@ class Executor:
 
     def _check_command(self, check: str, host_os: HostOS, target: str) -> str | None:
         if check == "ping":
-            return f"ping -n 4 {target}" if host_os == HostOS.WINDOWS else f"ping -c 4 {target}"
+            # Windows default per-echo timeout is long; bound each reply wait to 1s.
+            return f"ping -n 4 -w 1000 {target}" if host_os == HostOS.WINDOWS else f"ping -c 4 {target}"
         if check in {"traceroute", "tracert"}:
             return f"tracert {target}" if host_os == HostOS.WINDOWS else f"traceroute {target}"
         if check == "dns_trace":
