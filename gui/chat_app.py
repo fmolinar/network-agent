@@ -34,10 +34,20 @@ class NetworkAgentChatGUI:
         )
 
     def _resolve_python_bin(self) -> str:
+        if os.name == "nt":
+            venv_python = os.path.join(ROOT_DIR, ".venv", "Scripts", "python.exe")
+            if os.path.exists(venv_python):
+                return venv_python
+            return "python"
         venv_python = os.path.join(ROOT_DIR, ".venv", "bin", "python")
         if os.path.exists(venv_python):
             return venv_python
         return "python3"
+
+    def _llm_start_command(self, model: str) -> list[str]:
+        if os.name == "nt":
+            return ["cmd", "/c", os.path.join(ROOT_DIR, "llm", "spin_llm.bat"), model]
+        return [os.path.join(ROOT_DIR, "llm", "spin_llm.sh"), model]
 
     def _build_layout(self) -> None:
         top = ttk.Frame(self.root, padding=12)
@@ -99,13 +109,12 @@ class NetworkAgentChatGUI:
 
         def _run() -> None:
             self.root.after(0, lambda: self.status_text.set("Starting local LLM..."))
-            script_path = os.path.join(ROOT_DIR, "llm", "spin_llm.sh")
             model = self.model_name.get().strip() or "llama3.1"
             env = os.environ.copy()
             env["NETWORK_AGENT_LOCAL_MODEL"] = model
             try:
                 proc = subprocess.run(
-                    [script_path, model],
+                    self._llm_start_command(model),
                     cwd=ROOT_DIR,
                     env=env,
                     text=True,
@@ -113,7 +122,10 @@ class NetworkAgentChatGUI:
                     check=False,
                 )
             except FileNotFoundError:
-                self.root.after(0, lambda: self._append_system("LLM startup script not found at ./llm/spin_llm.sh"))
+                self.root.after(
+                    0,
+                    lambda: self._append_system("LLM startup script not found at ./llm/spin_llm.sh or ./llm/spin_llm.bat"),
+                )
                 self.root.after(0, lambda: self.status_text.set("LLM unavailable"))
                 return
 
