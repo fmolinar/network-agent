@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from dataclasses import asdict
 from pathlib import Path
 import time
@@ -56,7 +56,7 @@ class NetworkTroubleshootingEngine:
     ) -> dict[str, Any]:
         req_id = str(uuid.uuid4())
         started = time.perf_counter()
-        started_ts = datetime.now(UTC).isoformat()
+        started_ts = datetime.now(timezone.utc).isoformat()
         debug_ops: list[dict[str, Any]] = []
 
         def _op_start(agent: str, operation: str, payload: dict[str, Any]) -> tuple[float, dict[str, Any]]:
@@ -64,13 +64,13 @@ class NetworkTroubleshootingEngine:
             entry = {
                 "agent": agent,
                 "operation": operation,
-                "started_at": datetime.now(UTC).isoformat(),
+                "started_at": datetime.now(timezone.utc).isoformat(),
                 "input": payload,
             }
             return t0, entry
 
         def _op_end(t0: float, entry: dict[str, Any], output: dict[str, Any]) -> None:
-            entry["finished_at"] = datetime.now(UTC).isoformat()
+            entry["finished_at"] = datetime.now(timezone.utc).isoformat()
             entry["duration_ms"] = round((time.perf_counter() - t0) * 1000, 3)
             entry["output"] = output
             debug_ops.append(entry)
@@ -153,7 +153,7 @@ class NetworkTroubleshootingEngine:
             result["debug"] = {
                 "request_id": req_id,
                 "started_at": started_ts,
-                "finished_at": datetime.now(UTC).isoformat(),
+                "finished_at": datetime.now(timezone.utc).isoformat(),
                 "duration_ms": round((time.perf_counter() - started) * 1000, 3),
                 "host_os": self.host_os.value,
                 "agent_operations": debug_ops,
