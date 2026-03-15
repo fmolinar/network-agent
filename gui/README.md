@@ -6,10 +6,13 @@ This folder contains a desktop GUI for `network-agent` with a chat-window experi
 - `chat_app.py`: Tkinter chat application
 - `run_gui.sh`: launcher script
 - `run_gui.bat`: Windows launcher script
+- `../images/logo-network-agent.png`: logo shown in the app header
 
 ## What It Does
 - Starts local LLM first (via `../llm/spin_llm.sh`) if available
 - Falls back to manual mode if Ollama/model startup is unavailable
+- Uses a modern card-based chat layout with status badge and message bubbles
+- Renders the Network Agent logo in the header (`images/logo-network-agent.png`)
 - Provides chat-like input/output:
   - you type a network issue
   - it runs `network_agent.cli`
