@@ -38,7 +38,7 @@ class NetworkAgentChatGUI:
             venv_python = os.path.join(ROOT_DIR, ".venv", "Scripts", "python.exe")
             if os.path.exists(venv_python):
                 return venv_python
-            return "python"
+            return "py"
         venv_python = os.path.join(ROOT_DIR, ".venv", "bin", "python")
         if os.path.exists(venv_python):
             return venv_python

@@ -177,7 +177,7 @@ PYTHONPATH=src python -m network_agent.cli --prompt "I cannot reach 8.8.8.8"
 Windows CMD:
 ```bat
 set PYTHONPATH=src
-python -m network_agent.cli --prompt "I cannot reach 8.8.8.8"
+py -m network_agent.cli --prompt "I cannot reach 8.8.8.8"
 ```
 
 Environment variables:

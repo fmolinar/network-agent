@@ -18,7 +18,7 @@ def _python_bin() -> str:
         candidate = ROOT_DIR / ".venv" / "Scripts" / "python.exe"
         if candidate.exists():
             return str(candidate)
-        return "python"
+        return "py"
     candidate = ROOT_DIR / ".venv" / "bin" / "python"
     if candidate.exists():
         return str(candidate)
