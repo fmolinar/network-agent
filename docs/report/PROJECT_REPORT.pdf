@@ -1,0 +1,757 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [4 0 R 6 0 R 8 0 R 10 0 R 12 0 R 14 0 R 16 0 R] /Count 7 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 5 0 R >>
+endobj
+5 0 obj
+<< /Length 2496 >>
+stream
+BT
+/F1 11 Tf
+50 760 Td
+14 TL
+(Network Agent Project Report) Tj
+T*
+() Tj
+T*
+(- Project Overview and Goals) Tj
+T*
+() Tj
+T*
+(Problem statement) Tj
+T*
+(Modern network outages are often diagnosed manually by stitching together partial evidence from) Tj
+T*
+(ping, traceroute, logs, and packet-level summaries. This process is slow, error-prone, and) Tj
+T*
+(highly dependent on operator experience. In classroom and small-team settings, this creates two) Tj
+T*
+(practical problems:) Tj
+T*
+() Tj
+T*
+(- Analysts can miss obvious contradictions between data sources.) Tj
+T*
+(- Analysts can run unsafe or unnecessary commands while trying to collect more evidence.) Tj
+T*
+() Tj
+T*
+(network-agent addresses this by implementing a multi-agent troubleshooting pipeline that) Tj
+T*
+(consumes user prompts and network artifacts, then produces a structured diagnosis with) Tj
+T*
+(confidence, required evidence, and remediation guidance.) Tj
+T*
+() Tj
+T*
+(Why this is interesting) Tj
+T*
+(This project is interesting from a systems and research perspective because it sits at the) Tj
+T*
+(intersection of:) Tj
+T*
+() Tj
+T*
+(- Agent orchestration: planner, executor, generator, validator roles with explicit data) Tj
+T*
+(contracts.) Tj
+T*
+(- Safety-critical tooling: command allowlists, mutation detection, and approval gating.) Tj
+T*
+(- Hybrid reasoning: deterministic parser/rule logic augmented by optional LLM assistance.) Tj
+T*
+(- Cross-platform execution: Linux, macOS, and Windows command mapping and constraints.) Tj
+T*
+() Tj
+T*
+(The key design target is not ?maximal model creativity.? It is reliable, auditable diagnosis) Tj
+T*
+(under operational constraints.) Tj
+T*
+() Tj
+T*
+(Project goals) Tj
+T*
+(The system is designed around six concrete goals:) Tj
+T*
+() Tj
+T*
+(- Classify incidents into common network categories.) Tj
+T*
+(- Select and run only safe, read-oriented diagnostics by default.) Tj
+T*
+(- Produce ranked causes with explicit confidence and evidence links.) Tj
+T*
+(- Preserve a trace of each agent stage for reproducibility.) Tj
+T*
+(- Support optional local/offline LLM assistance.) Tj
+T*
+(- Remain usable by instructors with straightforward run instructions.) Tj
+T*
+() Tj
+T*
+(- Chosen Domain) Tj
+T*
+() Tj
+T*
+(Domain choice) Tj
+T*
+(This project uses an Other approved domain: Network Troubleshooting Agent.) Tj
+T*
+() Tj
+T*
+(Domain-specific constraints) Tj
+T*
+(Compared with generic assistant tasks, this domain has strict requirements:) Tj
+T*
+() Tj
+T*
+ET
+BT
+/F1 9 Tf
+280 30 Td
+(Page 1 of 7) Tj
+ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 7 0 R >>
+endobj
+7 0 obj
+<< /Length 1933 >>
+stream
+BT
+/F1 11 Tf
+50 760 Td
+14 TL
+(- Inputs are heterogeneous and noisy \(logs, traceroute hops, packet summaries\).) Tj
+T*
+(- Suggested actions can have real operational risk if not constrained.) Tj
+T*
+(- Cross-platform command semantics differ \(traceroute vs tracert, interface commands, route) Tj
+T*
+(tools\).) Tj
+T*
+(- ?Correctness? often means ?best-supported hypothesis with evidence gaps identified,? not a) Tj
+T*
+(single exact answer.) Tj
+T*
+() Tj
+T*
+(Why this domain fits a multi-agent architecture) Tj
+T*
+(Each subproblem maps naturally to a specialized agent:) Tj
+T*
+() Tj
+T*
+(- Planner handles triage and check selection.) Tj
+T*
+(- Executor handles data collection/parsing under policy constraints.) Tj
+T*
+(- Generator handles explanation and ranked causes.) Tj
+T*
+(- Validator handles constraint checks, confidence sanity checks, and safety consistency.) Tj
+T*
+() Tj
+T*
+(This separation improved maintainability and made testing easier because each stage has a narrow) Tj
+T*
+(contract.) Tj
+T*
+() Tj
+T*
+(- Agent Architecture) Tj
+T*
+() Tj
+T*
+(High-level architecture) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(    flowchart TD) Tj
+T*
+(        U[User Prompt + Artifacts] --> P[Planner]) Tj
+T*
+(        P --> E[Executor]) Tj
+T*
+(        E --> G[Generator]) Tj
+T*
+(        G --> V[Validator]) Tj
+T*
+(        V --> R[Diagnosis + Remediation]) Tj
+T*
+() Tj
+T*
+(        OS[Host OS Profile] --> P) Tj
+T*
+(        OS --> E) Tj
+T*
+(        OS --> V) Tj
+T*
+() Tj
+T*
+(        SG[Safety Gate] --> E) Tj
+T*
+(        SG --> V) Tj
+T*
+(        A[Audit Logger] --> P) Tj
+T*
+(        A --> E) Tj
+T*
+(        A --> G) Tj
+T*
+(        A --> V) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(Component responsibilities) Tj
+T*
+() Tj
+T*
+(Planner) Tj
+T*
+(- Classifies incident category \(connectivity, dns, routing, transport, security, unknown\).) Tj
+T*
+(- Selects relevant checks for that category.) Tj
+T*
+(- Applies host-OS adaptations.) Tj
+T*
+ET
+BT
+/F1 9 Tf
+280 30 Td
+(Page 2 of 7) Tj
+ET
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 9 0 R >>
+endobj
+9 0 obj
+<< /Length 2317 >>
+stream
+BT
+/F1 11 Tf
+50 760 Td
+14 TL
+(- Optionally accepts an LLM-assisted plan when available and valid.) Tj
+T*
+() Tj
+T*
+(Executor) Tj
+T*
+(- Uses provided artifacts first.) Tj
+T*
+(- Optionally collects missing evidence live with whitelisted commands.) Tj
+T*
+(- Normalizes and parses outputs into structured intermediate representations.) Tj
+T*
+(- Builds topology snapshot \(gateway, routes, neighbors, hops, interfaces\).) Tj
+T*
+(- Supports configurable live capture duration \(default 30s, user override via CLI or prompt\).) Tj
+T*
+() Tj
+T*
+(Generator) Tj
+T*
+(- Produces Diagnosis object:) Tj
+T*
+(- problem summary) Tj
+T*
+(- ranked candidate causes) Tj
+T*
+(- confidence score) Tj
+T*
+(- required evidence) Tj
+T*
+(- remediation plan) Tj
+T*
+(- Uses deterministic heuristics by default.) Tj
+T*
+(- Optionally switches to LLM-assisted diagnosis generation with schema checks/fallback.) Tj
+T*
+() Tj
+T*
+(Validator) Tj
+T*
+(- Enforces structural and numeric checks.) Tj
+T*
+(- Applies safety gate to proposed commands.) Tj
+T*
+(- Marks ambiguous cases and can invoke optional LLM critic.) Tj
+T*
+(- Treats LLM verdict as advisory; safety gate and deterministic constraints remain) Tj
+T*
+(authoritative.) Tj
+T*
+() Tj
+T*
+(Cross-cutting infrastructure) Tj
+T*
+(- SafetyGate: command allowlists, forbidden tokens, mutation-token approval checks.) Tj
+T*
+(- AuditLogger: JSONL trace per stage.) Tj
+T*
+(- Debug trace: request-scoped operation inputs/outputs/timings.) Tj
+T*
+() Tj
+T*
+(- Multi-LLM Call Flow) Tj
+T*
+() Tj
+T*
+(The project uses multiple LLM-capable interaction points with explicit roles.) Tj
+T*
+() Tj
+T*
+(LLM roles) Tj
+T*
+(- Planner LLM \(optional\)) Tj
+T*
+(- Input: user prompt + artifact preview + host OS.) Tj
+T*
+(- Output schema: category, selected_checks, rationale.) Tj
+T*
+(- Validation: category and check whitelist normalization; fallback to deterministic planner if) Tj
+T*
+(invalid.) Tj
+T*
+() Tj
+T*
+(- Generator LLM \(optional\)) Tj
+T*
+(- Input: selected checks, parsed outputs, missing checks, topology, user prompt.) Tj
+T*
+(- Output schema: diagnosis payload with ranked causes and remediation.) Tj
+T*
+(- Validation: cause list non-empty, confidence clamping, fallback remediation/evidence defaults.) Tj
+T*
+() Tj
+T*
+(- Validator LLM Critic \(optional and conditional\)) Tj
+T*
+ET
+BT
+/F1 9 Tf
+280 30 Td
+(Page 3 of 7) Tj
+ET
+endstream
+endobj
+10 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 11 0 R >>
+endobj
+11 0 obj
+<< /Length 2231 >>
+stream
+BT
+/F1 11 Tf
+50 760 Td
+14 TL
+(- Trigger: low confidence or high ambiguity.) Tj
+T*
+(- Input: diagnosis summary + execution context.) Tj
+T*
+(- Output schema: verdict, confidence, notes, suggested_evidence.) Tj
+T*
+(- Handling: reject/caution becomes validation reasons; cannot bypass safety gate.) Tj
+T*
+() Tj
+T*
+(Intermediate representations) Tj
+T*
+(The pipeline relies on explicit typed/dict structures between stages:) Tj
+T*
+() Tj
+T*
+(- PlannerPlan) Tj
+T*
+(- ExecutionResult \(raw outputs, parsed outputs, missing checks, topology\)) Tj
+T*
+(- Diagnosis) Tj
+T*
+(- ValidationResult) Tj
+T*
+() Tj
+T*
+(LLM outputs are treated as untrusted until parsed, shape-checked, normalized, and optionally) Tj
+T*
+(clamped.) Tj
+T*
+() Tj
+T*
+(Coordination strategy) Tj
+T*
+(The coordination model is linear with hard boundaries:) Tj
+T*
+() Tj
+T*
+(- Planner commits check set.) Tj
+T*
+(- Executor resolves artifact/live data and parsing.) Tj
+T*
+(- Generator ranks causes using evidence.) Tj
+T*
+(- Validator checks constraints and confidence behavior.) Tj
+T*
+() Tj
+T*
+(This avoids hidden side effects and keeps debugging straightforward because each stage has) Tj
+T*
+(explicit inputs and outputs logged to audit/debug channels.) Tj
+T*
+() Tj
+T*
+(- Tools and APIs Used) Tj
+T*
+() Tj
+T*
+(Core implementation tools) Tj
+T*
+(- Python package modules in src/network_agent/.) Tj
+T*
+(- Regex-based parsers for ping, traceroute, logs, pcap summary.) Tj
+T*
+(- Dataclasses for contracts and serialization.) Tj
+T*
+() Tj
+T*
+(Local and optional LLM connectors) Tj
+T*
+(- mock provider \(deterministic/testing\).) Tj
+T*
+(- ollama provider for offline local inference.) Tj
+T*
+(- openai and openai_compatible for API-compatible backends.) Tj
+T*
+(- anthropic support in critic path.) Tj
+T*
+() Tj
+T*
+(System diagnostics / shell tools) Tj
+T*
+(- ping, traceroute/tracert, nslookup, netstat, route, arp, interface info commands.) Tj
+T*
+(- tcpdump for read-only capture on supported non-Windows hosts.) Tj
+T*
+() Tj
+T*
+(Development/test tooling) Tj
+T*
+(- pytest for unit-style checks.) Tj
+T*
+(- Synthetic sample fixtures in samples/.) Tj
+T*
+(- Cross-platform CI configuration \(Linux/macOS/Windows matrix in repository workflow\).) Tj
+T*
+ET
+BT
+/F1 9 Tf
+280 30 Td
+(Page 4 of 7) Tj
+ET
+endstream
+endobj
+12 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 13 0 R >>
+endobj
+13 0 obj
+<< /Length 2117 >>
+stream
+BT
+/F1 11 Tf
+50 760 Td
+14 TL
+() Tj
+T*
+(- Validation and Safety Checks) Tj
+T*
+() Tj
+T*
+(Safety model) Tj
+T*
+(Safety is implemented as a first-class constraint, not an afterthought.) Tj
+T*
+() Tj
+T*
+(- OS-specific command allowlist.) Tj
+T*
+(- Forbidden destructive tokens \(e.g., rm, shutdown, format\).) Tj
+T*
+(- Dual-use command mutation detection \(add, set, delete, etc.\).) Tj
+T*
+(- Explicit approval path for potential configuration-changing actions.) Tj
+T*
+() Tj
+T*
+(Structural and semantic checks) Tj
+T*
+(Validator logic checks for:) Tj
+T*
+() Tj
+T*
+(- Presence of candidate causes.) Tj
+T*
+(- Confidence range consistency \(0..1\).) Tj
+T*
+(- Evidence sanity checks \(e.g., packet loss bounds\).) Tj
+T*
+(- Ambiguity detection and optional critic invocation.) Tj
+T*
+() Tj
+T*
+(Capture-duration controls) Tj
+T*
+(Live capture duration now includes controls to prevent runaway collection:) Tj
+T*
+() Tj
+T*
+(- CLI flag --capture-seconds with bounds \(5 to 300\).) Tj
+T*
+(- Prompt-based override parsing \(e.g., ?capture for 45 seconds?\).) Tj
+T*
+(- Timeout enforcement in shell runner with partial-output handling on timeout.) Tj
+T*
+() Tj
+T*
+(Testing evidence) Tj
+T*
+(The repository includes tests that cover:) Tj
+T*
+() Tj
+T*
+(- Planner classification and OS behavior.) Tj
+T*
+(- Executor live collection behavior.) Tj
+T*
+(- Validator command blocking and approval path.) Tj
+T*
+(- Engine operation trace and integration outputs.) Tj
+T*
+(- LLM-path integration with mock provider.) Tj
+T*
+() Tj
+T*
+(- Results and Discussion) Tj
+T*
+() Tj
+T*
+(What works well) Tj
+T*
+(- Deterministic baseline remains reliable) Tj
+T*
+(   The parser + heuristic pipeline yields consistent outputs across synthetic scenarios.) Tj
+T*
+() Tj
+T*
+(- LLM integration is optional and bounded) Tj
+T*
+(   LLM-assisted planning/generation can be enabled for richer behavior while preserving) Tj
+T*
+(deterministic fallback.) Tj
+T*
+() Tj
+T*
+(- Safety constraints are explicit and testable) Tj
+T*
+(   Command gating, mutation detection, and approval paths are encoded in code and exercised in) Tj
+T*
+(tests.) Tj
+T*
+ET
+BT
+/F1 9 Tf
+280 30 Td
+(Page 5 of 7) Tj
+ET
+endstream
+endobj
+14 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 15 0 R >>
+endobj
+15 0 obj
+<< /Length 2685 >>
+stream
+BT
+/F1 11 Tf
+50 760 Td
+14 TL
+() Tj
+T*
+(- Offline usability improved) Tj
+T*
+(   Local model startup wrappers \(.sh + .bat\) and GUI/CLI launchers support constrained) Tj
+T*
+(environments.) Tj
+T*
+() Tj
+T*
+(- Cross-platform practical fixes were incorporated) Tj
+T*
+(   Windows-specific issues \(launcher behavior, import path setup, decode handling, ping timeout) Tj
+T*
+(bounds\) were addressed with targeted changes.) Tj
+T*
+() Tj
+T*
+(Measured outcome snapshot) Tj
+T*
+(Using demo.py, three end-to-end interactions were executed with full agent loop and debug trace:) Tj
+T*
+() Tj
+T*
+(- dns_failure -> category dns, top cause DNS resolution failure.) Tj
+T*
+(- connectivity_loss -> category connectivity, top cause High packet loss indicates unstable or) Tj
+T*
+(broken link.) Tj
+T*
+(- transport_retransmits -> category transport, top cause Transport congestion or drops causing) Tj
+T*
+(retransmissions.) Tj
+T*
+() Tj
+T*
+(Artifacts and traces are included under examples/interactions/.) Tj
+T*
+() Tj
+T*
+(Failure modes observed) Tj
+T*
+(- Incomplete/malformed pcap summary reduces transport-confidence quality.) Tj
+T*
+(- Extremely sparse artifacts may force low-confidence generic diagnosis.) Tj
+T*
+(- Live capture commands can fail due to permission/environment limitations.) Tj
+T*
+(- LLM output schema drift can occur on unsupported or poorly tuned local models \(handled via) Tj
+T*
+(fallback, but still a UX limitation\).) Tj
+T*
+() Tj
+T*
+(Tradeoffs and design decisions) Tj
+T*
+(- Conservative safety over broad command freedom: fewer dangerous operations, but less automated) Tj
+T*
+(remediation.) Tj
+T*
+(- Linear agent pipeline over dynamic planner-executor loops: easier to reason about and test,) Tj
+T*
+(but less adaptive in long investigations.) Tj
+T*
+(- Strict schema checks over permissive parsing: more robust behavior under unexpected LLM) Tj
+T*
+(outputs, but occasional fallback to heuristic path.) Tj
+T*
+() Tj
+T*
+(- Limitations and Extensions) Tj
+T*
+() Tj
+T*
+(Current limitations) Tj
+T*
+(- No deep packet parsing beyond summary signals.) Tj
+T*
+(- No integration with external telemetry backends \(Prometheus/Grafana/cloud APIs\) yet.) Tj
+T*
+(- Root-cause confidence remains heuristic and not calibrated with a large empirical corpus.) Tj
+T*
+(- Live capture on Windows is limited by tooling differences.) Tj
+T*
+() Tj
+T*
+(Near-term extensions) Tj
+T*
+(- Add richer packet/event parsers \(e.g., mtr, iperf3, DNS trace depth\).) Tj
+T*
+(- Add redaction pipeline for sensitive logs/artifacts.) Tj
+T*
+(- Implement confidence calibration on labeled incident datasets.) Tj
+T*
+(- Add iterative clarification loop when evidence is insufficient.) Tj
+T*
+ET
+BT
+/F1 9 Tf
+280 30 Td
+(Page 6 of 7) Tj
+ET
+endstream
+endobj
+16 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 17 0 R >>
+endobj
+17 0 obj
+<< /Length 760 >>
+stream
+BT
+/F1 11 Tf
+50 760 Td
+14 TL
+(- Extend GUI to include structured evidence upload and timeline visualization.) Tj
+T*
+() Tj
+T*
+(- Conclusion) Tj
+T*
+() Tj
+T*
+(network-agent demonstrates a practical multi-agent architecture for network diagnostics with) Tj
+T*
+(explicit safety controls, auditable execution, and optional local/offline LLM assistance. The) Tj
+T*
+(system is not designed as a free-form autonomous operator; instead, it is a constrained) Tj
+T*
+(diagnostic partner that prioritizes traceability and correctness under uncertainty. This design) Tj
+T*
+(choice made the project robust, testable, and suitable for instructional evaluation while) Tj
+T*
+(leaving clear paths for future research extensions.) Tj
+T*
+ET
+BT
+/F1 9 Tf
+280 30 Td
+(Page 7 of 7) Tj
+ET
+endstream
+endobj
+xref
+0 18
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000155 00000 n 
+0000000225 00000 n 
+0000000351 00000 n 
+0000002899 00000 n 
+0000003025 00000 n 
+0000005010 00000 n 
+0000005136 00000 n 
+0000007505 00000 n 
+0000007633 00000 n 
+0000009917 00000 n 
+0000010045 00000 n 
+0000012215 00000 n 
+0000012343 00000 n 
+0000015081 00000 n 
+0000015209 00000 n 
+trailer
+<< /Size 18 /Root 1 0 R >>
+startxref
+16021
+%%EOF
