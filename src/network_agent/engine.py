@@ -10,7 +10,9 @@ import uuid
 from network_agent.agents.executor import Executor
 from network_agent.agents.generator import Generator
 from network_agent.agents.planner import Planner
+from network_agent.agents.prompts import generator_prompt, planner_prompt, validator_prompt
 from network_agent.agents.validator import Validator
+from network_agent.core.agent_llm import AgentLLMConfig, AgentLLMConnector
 from network_agent.core.audit import AuditLogger
 from network_agent.core.host_os import parse_host_os
 from network_agent.core.llm import LLMCritic, LLMConfig
@@ -24,13 +26,20 @@ class NetworkTroubleshootingEngine:
         audit_path: str = "artifacts/audit.log",
         host_os: str | None = None,
         llm_config: LLMConfig | None = None,
+        agent_llm_config: AgentLLMConfig | None = None,
     ) -> None:
         self.host_os = parse_host_os(host_os)
         self.safety_gate = SafetyGate.default(host_os=self.host_os)
         self.llm_config = llm_config or LLMConfig.from_env()
-        self.planner = Planner()
+        self.agent_llm_config = agent_llm_config or AgentLLMConfig.from_env()
+        self.agent_llm_connector = (
+            AgentLLMConnector(self.agent_llm_config)
+            if self.agent_llm_config.provider.lower() not in {"", "none"}
+            else None
+        )
+        self.planner = Planner(llm_connector=self.agent_llm_connector)
         self.executor = Executor(runner=WhitelistedShellRunner(safety_gate=self.safety_gate))
-        self.generator = Generator()
+        self.generator = Generator(llm_connector=self.agent_llm_connector)
         self.validator = Validator(safety_gate=self.safety_gate, llm_critic=LLMCritic(self.llm_config))
         self.audit = AuditLogger(path=Path(audit_path))
 
@@ -42,6 +51,7 @@ class NetworkTroubleshootingEngine:
         allow_config_changes: bool = False,
         include_topology: bool = True,
         use_llm_critic: bool = False,
+        capture_agent_prompts: bool = False,
         debug: bool = False,
     ) -> dict[str, Any]:
         req_id = str(uuid.uuid4())
@@ -129,6 +139,15 @@ class NetworkTroubleshootingEngine:
             "validation": asdict(validation),
             "execution": asdict(execution),
         }
+        if capture_agent_prompts:
+            planner_system, planner_user = planner_prompt(user_prompt, artifacts, self.host_os.value)
+            generator_system, generator_user = generator_prompt(plan, user_prompt, execution)
+            validator_system, validator_user = validator_prompt(diagnosis, execution)
+            result["agent_prompts"] = {
+                "planner": {"system": planner_system, "user": planner_user},
+                "generator": {"system": generator_system, "user": generator_user},
+                "validator": {"system": validator_system, "user": validator_user},
+            }
 
         if debug:
             result["debug"] = {

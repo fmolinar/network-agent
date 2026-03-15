@@ -108,6 +108,12 @@ Supported providers:
 - `anthropic` (Messages API)
 - `ollama` (local `http://localhost:11434`)
 
+LLM-assisted planner/generator agents are also optional and can run fully offline with a local model backend.
+Supported agent providers:
+- `ollama` (native API)
+- `openai_compatible` (local OpenAI-compatible servers such as LM Studio or vLLM)
+- `mock` (deterministic testing)
+
 CLI example (`openai`):
 ```bash
 network-agent \
@@ -127,6 +133,27 @@ network-agent \
   --llm-base-url http://localhost:11434/api/chat
 ```
 
+CLI example (offline LLM-assisted agents with Ollama):
+```bash
+network-agent \
+  --prompt "I cannot reach 8.8.8.8" \
+  --enable-llm-agents \
+  --agent-llm-provider ollama \
+  --agent-llm-model llama3.1 \
+  --agent-llm-base-url http://localhost:11434/api/chat \
+  --dump-agent-prompts artifacts/agent-prompts.json
+```
+
+CLI example (offline LLM-assisted agents with OpenAI-compatible local server):
+```bash
+network-agent \
+  --prompt "my network is unstable" \
+  --enable-llm-agents \
+  --agent-llm-provider openai_compatible \
+  --agent-llm-model llama-3.1-8b-instruct \
+  --agent-llm-base-url http://localhost:1234/v1/chat/completions
+```
+
 Environment variables:
 - `NETWORK_AGENT_LLM_PROVIDER`
 - `NETWORK_AGENT_LLM_MODEL`
@@ -134,6 +161,29 @@ Environment variables:
 - `NETWORK_AGENT_LLM_API_KEY`
 - `OPENAI_API_KEY` (fallback for `openai`)
 - `ANTHROPIC_API_KEY` (fallback for `anthropic`)
+- `NETWORK_AGENT_AGENT_LLM_PROVIDER`
+- `NETWORK_AGENT_AGENT_LLM_MODEL`
+- `NETWORK_AGENT_AGENT_LLM_BASE_URL`
+- `NETWORK_AGENT_AGENT_LLM_API_KEY`
+
+### Local Model Download
+For offline usage, install a local runtime and pull a model:
+
+Ollama:
+1. Install from `https://ollama.com/download`.
+2. Pull a model:
+```bash
+ollama pull llama3.1
+```
+3. Start service (if not already running):
+```bash
+ollama serve
+```
+
+LM Studio (OpenAI-compatible local server):
+1. Install from `https://lmstudio.ai/`.
+2. Download an instruction-tuned model in LM Studio.
+3. Start the local OpenAI-compatible server and point `--agent-llm-base-url` to it.
 
 ## Debug Mode
 Use debug mode to evaluate each agent operation for a single request.
