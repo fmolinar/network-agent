@@ -108,6 +108,12 @@ Supported providers:
 - `anthropic` (Messages API)
 - `ollama` (local `http://localhost:11434`)
 
+LLM-assisted planner/generator agents are also optional and can run fully offline with a local model backend.
+Supported agent providers:
+- `ollama` (native API)
+- `openai_compatible` (local OpenAI-compatible servers such as LM Studio or vLLM)
+- `mock` (deterministic testing)
+
 CLI example (`openai`):
 ```bash
 network-agent \
@@ -123,8 +129,55 @@ network-agent \
   --prompt "my network is unstable" \
   --enable-llm-critic \
   --llm-provider ollama \
-  --llm-model llama3.1 \
+  --llm-model llama3.2 \
   --llm-base-url http://localhost:11434/api/chat
+```
+
+CLI example (offline LLM-assisted agents with Ollama):
+```bash
+network-agent \
+  --prompt "I cannot reach 8.8.8.8" \
+  --enable-llm-agents \
+  --agent-llm-provider ollama \
+  --agent-llm-model llama3.2 \
+  --agent-llm-base-url http://localhost:11434/api/chat \
+  --dump-agent-prompts artifacts/agent-prompts.json
+```
+
+CLI example (offline LLM-assisted agents with OpenAI-compatible local server):
+```bash
+network-agent \
+  --prompt "my network is unstable" \
+  --enable-llm-agents \
+  --agent-llm-provider openai_compatible \
+  --agent-llm-model llama-3.2-3b-instruct \
+  --agent-llm-base-url http://localhost:1234/v1/chat/completions
+```
+
+Interactive offline chat launcher:
+
+macOS/Linux:
+```bash
+./llm/run_network_agent_chat.sh
+```
+
+Windows CMD:
+```bat
+llm\run_network_agent_chat.bat
+```
+
+If you run the CLI manually and see `ModuleNotFoundError: No module named 'network_agent'`,
+run from repo root with:
+
+macOS/Linux:
+```bash
+PYTHONPATH=src python -m network_agent.cli --prompt "I cannot reach 8.8.8.8"
+```
+
+Windows CMD:
+```bat
+set PYTHONPATH=src
+py -m network_agent.cli --prompt "I cannot reach 8.8.8.8"
 ```
 
 Environment variables:
@@ -134,6 +187,29 @@ Environment variables:
 - `NETWORK_AGENT_LLM_API_KEY`
 - `OPENAI_API_KEY` (fallback for `openai`)
 - `ANTHROPIC_API_KEY` (fallback for `anthropic`)
+- `NETWORK_AGENT_AGENT_LLM_PROVIDER`
+- `NETWORK_AGENT_AGENT_LLM_MODEL`
+- `NETWORK_AGENT_AGENT_LLM_BASE_URL`
+- `NETWORK_AGENT_AGENT_LLM_API_KEY`
+
+### Local Model Download
+For offline usage, install a local runtime and pull a model:
+
+Ollama:
+1. Install from `https://ollama.com/download`.
+2. Pull a model:
+```bash
+ollama pull llama3.2
+```
+3. Start service (if not already running):
+```bash
+ollama serve
+```
+
+LM Studio (OpenAI-compatible local server):
+1. Install from `https://lmstudio.ai/`.
+2. Download an instruction-tuned model in LM Studio.
+3. Start the local OpenAI-compatible server and point `--agent-llm-base-url` to it.
 
 ## Debug Mode
 Use debug mode to evaluate each agent operation for a single request.
@@ -236,8 +312,12 @@ Run with live collection fallback for missing artifacts:
 network-agent \
   --prompt "I cannot reach 8.8.8.8 from this host" \
   --host-os auto \
-  --collect-live-stats
+  --collect-live-stats \
+  --capture-seconds 30
 ```
+
+Packet capture duration can also be requested in the prompt, for example:
+- `"run a tcpdump capture for 45 seconds and diagnose packet loss"`
 
 Disable topology generation:
 ```bash

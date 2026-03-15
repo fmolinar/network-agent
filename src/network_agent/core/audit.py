@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -14,7 +14,7 @@ class AuditLogger:
     def log(self, event: str, payload: dict[str, Any]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         entry = {
-            "ts": datetime.now(UTC).isoformat(),
+            "ts": datetime.now(timezone.utc).isoformat(),
             "event": event,
             "payload": payload,
         }
