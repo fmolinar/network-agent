@@ -49,6 +49,7 @@ class NetworkTroubleshootingEngine:
         artifacts: dict[str, str],
         collect_live_stats: bool = False,
         allow_config_changes: bool = False,
+        capture_seconds: int = 30,
         include_topology: bool = True,
         use_llm_critic: bool = False,
         capture_agent_prompts: bool = False,
@@ -91,6 +92,7 @@ class NetworkTroubleshootingEngine:
                 "selected_checks": plan.selected_checks,
                 "collect_live_stats": collect_live_stats,
                 "allow_config_changes": allow_config_changes,
+                "capture_seconds": capture_seconds,
                 "include_topology": include_topology,
             },
         )
@@ -100,6 +102,7 @@ class NetworkTroubleshootingEngine:
             user_prompt=user_prompt,
             collect_live_stats=collect_live_stats,
             allow_config_changes=allow_config_changes,
+            capture_seconds=capture_seconds,
             include_topology=include_topology,
         )
         self.audit.log("executor.run", asdict(execution))

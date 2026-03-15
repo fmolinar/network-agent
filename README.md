@@ -312,8 +312,12 @@ Run with live collection fallback for missing artifacts:
 network-agent \
   --prompt "I cannot reach 8.8.8.8 from this host" \
   --host-os auto \
-  --collect-live-stats
+  --collect-live-stats \
+  --capture-seconds 30
 ```
+
+Packet capture duration can also be requested in the prompt, for example:
+- `"run a tcpdump capture for 45 seconds and diagnose packet loss"`
 
 Disable topology generation:
 ```bash

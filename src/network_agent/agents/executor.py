@@ -26,6 +26,21 @@ class Executor:
             return host_match.group(0)
         return "8.8.8.8"
 
+    def _capture_seconds_from_prompt(self, user_prompt: str, fallback_seconds: int) -> int:
+        text = user_prompt.lower()
+        if not any(token in text for token in ("capture", "pcap", "tcpdump")):
+            return max(5, min(fallback_seconds, 300))
+
+        match = re.search(r"\b(\d{1,3})\s*(?:s|sec|secs|second|seconds)\b", text)
+        if not match:
+            return max(5, min(fallback_seconds, 300))
+
+        try:
+            requested = int(match.group(1))
+        except ValueError:
+            requested = fallback_seconds
+        return max(5, min(requested, 300))
+
     def _check_command(self, check: str, host_os: HostOS, target: str) -> str | None:
         if check == "ping":
             # Windows default per-echo timeout is long; bound each reply wait to 1s.
@@ -49,8 +64,8 @@ class Executor:
                 return "ifconfig"
             return "ip -br addr"
         if check in {"pcap_summary", "tcpdump_summary"} and host_os != HostOS.WINDOWS:
-            # Read-only sampling. This may fail on hosts without privileges.
-            return "tcpdump -nn -c 50"
+            # Read-only live capture. Duration is bounded by runner timeout.
+            return "tcpdump -nn"
         return None
 
     def _first_available(self, artifacts: dict[str, str], keys: list[str]) -> str | None:
@@ -66,6 +81,7 @@ class Executor:
         user_prompt: str,
         collect_live_stats: bool,
         allow_config_changes: bool,
+        capture_seconds: int,
         attempts: dict[str, str],
         errors: dict[str, str],
     ) -> str | None:
@@ -75,8 +91,9 @@ class Executor:
         if not command:
             return None
         attempts[check] = command
+        timeout_override = capture_seconds + 3 if check in {"pcap_summary", "tcpdump_summary"} else None
         try:
-            return self.runner.run(command, user_approved=allow_config_changes)
+            return self.runner.run(command, user_approved=allow_config_changes, timeout_seconds=timeout_override)
         except Exception as exc:
             errors[check] = str(exc)
             return None
@@ -88,6 +105,7 @@ class Executor:
         user_prompt: str = "",
         collect_live_stats: bool = False,
         allow_config_changes: bool = False,
+        capture_seconds: int = 30,
         include_topology: bool = True,
     ) -> ExecutionResult:
         parsed: dict[str, dict] = {}
@@ -95,6 +113,7 @@ class Executor:
         missing_checks: list[str] = []
         collection_attempts: dict[str, str] = {}
         collection_errors: dict[str, str] = {}
+        capture_window_seconds = self._capture_seconds_from_prompt(user_prompt, capture_seconds)
 
         trace_keys = ["tracert", "traceroute"] if plan.host_os == HostOS.WINDOWS else ["traceroute", "tracert"]
         dns_keys = ["dns_trace", "dig", "nslookup", "dns"]
@@ -110,6 +129,7 @@ class Executor:
                         user_prompt,
                         collect_live_stats,
                         allow_config_changes,
+                        capture_window_seconds,
                         collection_attempts,
                         collection_errors,
                     )
@@ -127,6 +147,7 @@ class Executor:
                         user_prompt,
                         collect_live_stats,
                         allow_config_changes,
+                        capture_window_seconds,
                         collection_attempts,
                         collection_errors,
                     )
@@ -151,6 +172,7 @@ class Executor:
                         user_prompt,
                         collect_live_stats,
                         allow_config_changes,
+                        capture_window_seconds,
                         collection_attempts,
                         collection_errors,
                     )
@@ -168,6 +190,7 @@ class Executor:
                         user_prompt,
                         collect_live_stats,
                         allow_config_changes,
+                        capture_window_seconds,
                         collection_attempts,
                         collection_errors,
                     )
@@ -185,6 +208,7 @@ class Executor:
                         user_prompt,
                         collect_live_stats,
                         allow_config_changes,
+                        capture_window_seconds,
                         collection_attempts,
                         collection_errors,
                     )
@@ -202,6 +226,7 @@ class Executor:
                         user_prompt,
                         collect_live_stats,
                         allow_config_changes,
+                        capture_window_seconds,
                         collection_attempts,
                         collection_errors,
                     )
@@ -219,6 +244,7 @@ class Executor:
                         user_prompt,
                         collect_live_stats,
                         allow_config_changes,
+                        capture_window_seconds,
                         collection_attempts,
                         collection_errors,
                     )
@@ -245,6 +271,7 @@ class Executor:
                     user_prompt,
                     collect_live_stats,
                     allow_config_changes,
+                    capture_window_seconds,
                     collection_attempts,
                     collection_errors,
                 )

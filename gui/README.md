@@ -71,3 +71,7 @@ llm\spin_llm.bat llama3.2
 - `Send`: run diagnosis for the current message
 - `Enter`: send message
 - `Shift+Enter`: newline in input box
+- `Working...` loader: visible whenever a background task is running
+
+Tip: you can request capture duration directly in chat, for example:
+- `run a packet capture for 60 seconds and diagnose retransmits`

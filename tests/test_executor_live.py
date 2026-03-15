@@ -10,9 +10,11 @@ from network_agent.core.schemas import Category, PlannerPlan
 @dataclass
 class FakeRunner:
     calls: list[str] = field(default_factory=list)
+    timeouts: list[int | None] = field(default_factory=list)
 
-    def run(self, command: str, user_approved: bool = False) -> str:
+    def run(self, command: str, user_approved: bool = False, timeout_seconds: int | None = None) -> str:
         self.calls.append(command)
+        self.timeouts.append(timeout_seconds)
         if command.startswith("ping"):
             return "4 packets transmitted, 4 received, 0% packet loss\nrtt min/avg/max/mdev = 9.0/10.0/11.0/1.0 ms"
         if command.startswith("traceroute"):
@@ -25,6 +27,8 @@ class FakeRunner:
             return "eth0 UP 10.0.0.5/24"
         if command.startswith("netstat"):
             return "Kernel IP routing table\ndefault via 10.0.0.1 dev eth0"
+        if command.startswith("tcpdump"):
+            return "Packets: 120, retransmits: 7, drops: 1"
         return ""
 
 
@@ -96,3 +100,25 @@ def test_executor_windows_ping_uses_bounded_timeout() -> None:
 
     assert "ping" in result.executed_checks
     assert any(call.startswith("ping -n 4 -w 1000 ") for call in runner.calls)
+
+
+def test_executor_live_capture_respects_capture_seconds() -> None:
+    plan = PlannerPlan(
+        category=Category.TRANSPORT,
+        selected_checks=["pcap_summary"],
+        rationale="test",
+        host_os=HostOS.LINUX,
+    )
+    runner = FakeRunner()
+    executor = Executor(runner=runner)
+    result = executor.run(
+        plan,
+        artifacts={},
+        user_prompt="please run a packet capture for 45 seconds",
+        collect_live_stats=True,
+        capture_seconds=30,
+    )
+
+    assert "pcap_summary" in result.executed_checks
+    assert runner.calls[0] == "tcpdump -nn"
+    assert runner.timeouts[0] == 48

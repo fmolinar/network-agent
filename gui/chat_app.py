@@ -36,6 +36,7 @@ class NetworkAgentChatGUI:
         self.status_text = tk.StringVar(value="Ready")
         self.status_badge = tk.StringVar(value="READY")
         self._is_busy = False
+        self._loading_count = 0
         self._logo_image: tk.PhotoImage | None = None
 
         self._configure_styles()
@@ -57,6 +58,14 @@ class NetworkAgentChatGUI:
         style.configure("Label.TLabel", background=self.CARD_BG, foreground="#1f3b59", font=("Segoe UI", 10, "bold"))
         style.configure("Status.TLabel", background="#e8f2ff", foreground="#16487a", font=("Segoe UI", 9, "bold"), padding=(10, 4))
         style.configure("Primary.TButton", font=("Segoe UI", 10, "bold"), padding=(12, 8))
+        style.configure(
+            "Loader.Horizontal.TProgressbar",
+            troughcolor="#eaf0f8",
+            background="#2a7bd1",
+            bordercolor="#eaf0f8",
+            lightcolor="#2a7bd1",
+            darkcolor="#2a7bd1",
+        )
 
     def _resolve_python_bin(self) -> str:
         if os.name == "nt":
@@ -126,7 +135,19 @@ class NetworkAgentChatGUI:
         ttk.Label(title_group, text="Network Agent", style="Title.TLabel").pack(anchor="w")
         ttk.Label(title_group, text="Offline troubleshooting with local LLM support", style="Subtitle.TLabel").pack(anchor="w", pady=(2, 0))
 
-        ttk.Label(header_top, textvariable=self.status_badge, style="Status.TLabel").pack(side=tk.RIGHT)
+        status_group = ttk.Frame(header_top, style="Card.TFrame")
+        status_group.pack(side=tk.RIGHT, anchor="e")
+        ttk.Label(status_group, textvariable=self.status_badge, style="Status.TLabel").pack(side=tk.TOP, anchor="e")
+        self.loading_row = ttk.Frame(status_group, style="Card.TFrame")
+        self.loading_label = ttk.Label(self.loading_row, text="Working...", style="Subtitle.TLabel")
+        self.loading_label.pack(side=tk.LEFT, padx=(0, 8))
+        self.loading_bar = ttk.Progressbar(
+            self.loading_row,
+            mode="indeterminate",
+            length=120,
+            style="Loader.Horizontal.TProgressbar",
+        )
+        self.loading_bar.pack(side=tk.LEFT)
 
         controls = ttk.Frame(header, style="Card.TFrame", padding=(14, 0, 14, 14))
         controls.pack(fill=tk.X)
@@ -234,6 +255,20 @@ class NetworkAgentChatGUI:
         if badge is not None:
             self.status_badge.set(badge)
 
+    def _loading_start(self) -> None:
+        self._loading_count += 1
+        if self._loading_count == 1:
+            self.loading_row.pack(side=tk.TOP, anchor="e", pady=(6, 0))
+            self.loading_bar.start(11)
+
+    def _loading_stop(self) -> None:
+        if self._loading_count <= 0:
+            return
+        self._loading_count -= 1
+        if self._loading_count == 0:
+            self.loading_bar.stop()
+            self.loading_row.pack_forget()
+
     def _append_chat(self, speaker: str, message: str) -> None:
         speaker_key = speaker.lower()
         meta_tag = {
@@ -268,6 +303,10 @@ class NetworkAgentChatGUI:
     def _set_busy(self, busy: bool) -> None:
         self._is_busy = busy
         self.input_box.configure(state=tk.DISABLED if busy else tk.NORMAL)
+        if busy:
+            self._loading_start()
+        else:
+            self._loading_stop()
 
     def _on_enter_pressed(self, event: tk.Event[Any]) -> str:
         if event.state & 0x0001:
@@ -280,6 +319,7 @@ class NetworkAgentChatGUI:
             return
 
         def _run() -> None:
+            self.root.after(0, self._loading_start)
             self.root.after(0, lambda: self._set_status("Starting local LLM...", "STARTING LLM"))
             model = self.model_name.get().strip() or "llama3.2"
             env = os.environ.copy()
@@ -300,6 +340,7 @@ class NetworkAgentChatGUI:
                     lambda: self._append_system("LLM startup script not found at ./llm/spin_llm.sh or ./llm/spin_llm.bat"),
                 )
                 self.root.after(0, lambda: self._set_status("LLM unavailable", "MANUAL MODE"))
+                self.root.after(0, self._loading_stop)
                 return
 
             if proc.returncode == 0:
@@ -308,6 +349,7 @@ class NetworkAgentChatGUI:
             else:
                 self.root.after(0, lambda: self._append_system("Ollama not installed or model start failed. Running manual mode."))
                 self.root.after(0, lambda: self._set_status("LLM unavailable - manual mode", "MANUAL MODE"))
+            self.root.after(0, self._loading_stop)
 
         threading.Thread(target=_run, daemon=True).start()
 

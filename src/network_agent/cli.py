@@ -31,6 +31,12 @@ def main() -> None:
         help="Allow configuration-changing commands only when explicitly approved",
     )
     parser.add_argument(
+        "--capture-seconds",
+        type=int,
+        default=30,
+        help="Duration for live packet capture checks (default: 30)",
+    )
+    parser.add_argument(
         "--skip-topology",
         action="store_true",
         help="Disable network topology snapshot generation",
@@ -120,6 +126,7 @@ def main() -> None:
         artifacts,
         collect_live_stats=args.collect_live_stats,
         allow_config_changes=args.allow_config_changes,
+        capture_seconds=max(5, min(args.capture_seconds, 300)),
         include_topology=not args.skip_topology,
         use_llm_critic=args.enable_llm_critic,
         capture_agent_prompts=bool(args.dump_agent_prompts),
