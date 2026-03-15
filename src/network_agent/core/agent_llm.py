@@ -11,7 +11,7 @@ from typing import Any
 @dataclass(slots=True)
 class AgentLLMConfig:
     provider: str = "none"
-    model: str = "llama3.1"
+    model: str = "llama3.2"
     base_url: str | None = None
     api_key: str | None = None
     timeout_seconds: int = 30
@@ -19,12 +19,12 @@ class AgentLLMConfig:
     @classmethod
     def from_env(cls) -> "AgentLLMConfig":
         provider = os.getenv("NETWORK_AGENT_AGENT_LLM_PROVIDER", "none").strip().lower()
-        model = os.getenv("NETWORK_AGENT_AGENT_LLM_MODEL", "llama3.1").strip()
+        model = os.getenv("NETWORK_AGENT_AGENT_LLM_MODEL", "llama3.2").strip()
         base_url = os.getenv("NETWORK_AGENT_AGENT_LLM_BASE_URL")
         api_key = os.getenv("NETWORK_AGENT_AGENT_LLM_API_KEY")
 
         # Backward-compatible fallback to existing generic LLM env vars.
-        if model == "llama3.1":
+        if model == "llama3.2":
             model = os.getenv("NETWORK_AGENT_LLM_MODEL", model).strip()
         if not base_url:
             base_url = os.getenv("NETWORK_AGENT_LLM_BASE_URL")

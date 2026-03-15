@@ -23,7 +23,7 @@ class NetworkAgentChatGUI:
 
         self.python_bin = self._resolve_python_bin()
         self.llm_enabled = tk.BooleanVar(value=True)
-        self.model_name = tk.StringVar(value=os.getenv("NETWORK_AGENT_LOCAL_MODEL", "llama3.1"))
+        self.model_name = tk.StringVar(value=os.getenv("NETWORK_AGENT_LOCAL_MODEL", "llama3.2"))
         self.status_text = tk.StringVar(value="Ready")
         self._is_busy = False
 
@@ -48,6 +48,16 @@ class NetworkAgentChatGUI:
         if os.name == "nt":
             return ["cmd", "/c", os.path.join(ROOT_DIR, "llm", "spin_llm.bat"), model]
         return [os.path.join(ROOT_DIR, "llm", "spin_llm.sh"), model]
+
+    def _runtime_env(self) -> dict[str, str]:
+        env = os.environ.copy()
+        src_path = os.path.join(ROOT_DIR, "src")
+        existing = env.get("PYTHONPATH", "").strip()
+        if existing:
+            env["PYTHONPATH"] = f"{src_path}{os.pathsep}{existing}"
+        else:
+            env["PYTHONPATH"] = src_path
+        return env
 
     def _build_layout(self) -> None:
         top = ttk.Frame(self.root, padding=12)
@@ -109,7 +119,7 @@ class NetworkAgentChatGUI:
 
         def _run() -> None:
             self.root.after(0, lambda: self.status_text.set("Starting local LLM..."))
-            model = self.model_name.get().strip() or "llama3.1"
+            model = self.model_name.get().strip() or "llama3.2"
             env = os.environ.copy()
             env["NETWORK_AGENT_LOCAL_MODEL"] = model
             try:
@@ -162,7 +172,7 @@ class NetworkAgentChatGUI:
                 "--collect-live-stats",
             ]
             if self.llm_enabled.get():
-                model = self.model_name.get().strip() or "llama3.1"
+                model = self.model_name.get().strip() or "llama3.2"
                 cmd.extend(
                     [
                         "--enable-llm-agents",
@@ -175,7 +185,14 @@ class NetworkAgentChatGUI:
                     ]
                 )
 
-            proc = subprocess.run(cmd, cwd=ROOT_DIR, text=True, capture_output=True, check=False)
+            proc = subprocess.run(
+                cmd,
+                cwd=ROOT_DIR,
+                env=self._runtime_env(),
+                text=True,
+                capture_output=True,
+                check=False,
+            )
             if proc.returncode != 0:
                 err = proc.stderr.strip() or "Unknown error"
                 self.root.after(0, lambda: self._append_agent(f"Execution failed: {err}"))

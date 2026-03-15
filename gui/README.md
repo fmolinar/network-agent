@@ -37,6 +37,8 @@ From repo root (Windows CMD):
 gui\run_gui.bat
 ```
 
+The launchers set `PYTHONPATH=src` automatically, so GUI/chat works even without editable install.
+
 Direct run:
 ```bash
 python gui/chat_app.py
@@ -50,17 +52,17 @@ llm\run_network_agent_chat.bat
 ## LLM Behavior
 - On startup, the GUI attempts to run:
 ```bash
-./llm/spin_llm.sh llama3.1
+./llm/spin_llm.sh llama3.2
 ```
 - On Windows, it attempts:
 ```bat
-llm\spin_llm.bat llama3.1
+llm\spin_llm.bat llama3.2
 ```
 - If that succeeds, LLM-assisted agents are enabled automatically.
 - If that fails, it prints a system message and continues in manual mode.
 
 ## Controls
-- `Model`: local model name (default `llama3.1`)
+- `Model`: local model name (default `llama3.2`)
 - `Use local LLM (Ollama)`: toggle for LLM-assisted planner/generator
 - `Start LLM`: retry local LLM startup manually
 - `Send`: run diagnosis for the current message

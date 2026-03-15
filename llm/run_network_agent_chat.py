@@ -55,6 +55,17 @@ def _start_llm(model: str) -> bool:
     return True
 
 
+def _runtime_env() -> dict[str, str]:
+    env = os.environ.copy()
+    src_path = str(ROOT_DIR / "src")
+    existing = env.get("PYTHONPATH", "").strip()
+    if existing:
+        env["PYTHONPATH"] = f"{src_path}{os.pathsep}{existing}"
+    else:
+        env["PYTHONPATH"] = src_path
+    return env
+
+
 def _format_reply(payload: dict[str, Any]) -> str:
     diagnosis = payload.get("diagnosis", {})
     validation = payload.get("validation", {})
@@ -81,7 +92,7 @@ def _format_reply(payload: dict[str, Any]) -> str:
 
 
 def main() -> int:
-    model = os.getenv("NETWORK_AGENT_LOCAL_MODEL", "llama3.1")
+    model = os.getenv("NETWORK_AGENT_LOCAL_MODEL", "llama3.2")
     host = os.getenv("OLLAMA_HOST", "127.0.0.1:11434")
     py = _python_bin()
     use_llm_agents = _start_llm(model)
@@ -129,6 +140,7 @@ def main() -> int:
         proc = subprocess.run(
             cmd,
             cwd=ROOT_DIR,
+            env=_runtime_env(),
             text=True,
             capture_output=True,
             check=False,

@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 set "MODEL=%~1"
-if "%MODEL%"=="" set "MODEL=llama3.1"
+if "%MODEL%"=="" set "MODEL=llama3.2"
 if "%OLLAMA_HOST%"=="" set "OLLAMA_HOST=127.0.0.1:11434"
 
 where ollama >nul 2>nul

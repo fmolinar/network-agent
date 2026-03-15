@@ -129,7 +129,7 @@ network-agent \
   --prompt "my network is unstable" \
   --enable-llm-critic \
   --llm-provider ollama \
-  --llm-model llama3.1 \
+  --llm-model llama3.2 \
   --llm-base-url http://localhost:11434/api/chat
 ```
 
@@ -139,7 +139,7 @@ network-agent \
   --prompt "I cannot reach 8.8.8.8" \
   --enable-llm-agents \
   --agent-llm-provider ollama \
-  --agent-llm-model llama3.1 \
+  --agent-llm-model llama3.2 \
   --agent-llm-base-url http://localhost:11434/api/chat \
   --dump-agent-prompts artifacts/agent-prompts.json
 ```
@@ -150,7 +150,7 @@ network-agent \
   --prompt "my network is unstable" \
   --enable-llm-agents \
   --agent-llm-provider openai_compatible \
-  --agent-llm-model llama-3.1-8b-instruct \
+  --agent-llm-model llama-3.2-3b-instruct \
   --agent-llm-base-url http://localhost:1234/v1/chat/completions
 ```
 
@@ -164,6 +164,20 @@ macOS/Linux:
 Windows CMD:
 ```bat
 llm\run_network_agent_chat.bat
+```
+
+If you run the CLI manually and see `ModuleNotFoundError: No module named 'network_agent'`,
+run from repo root with:
+
+macOS/Linux:
+```bash
+PYTHONPATH=src python -m network_agent.cli --prompt "I cannot reach 8.8.8.8"
+```
+
+Windows CMD:
+```bat
+set PYTHONPATH=src
+python -m network_agent.cli --prompt "I cannot reach 8.8.8.8"
 ```
 
 Environment variables:
@@ -185,7 +199,7 @@ Ollama:
 1. Install from `https://ollama.com/download`.
 2. Pull a model:
 ```bash
-ollama pull llama3.1
+ollama pull llama3.2
 ```
 3. Start service (if not already running):
 ```bash
