@@ -1,5 +1,9 @@
 # Network Agent Project Report
 
+![Network Agent Logo](../../images/logo-network-agent.png)
+
+![System High-Level Overview](../../images/high-level-overview.png)
+
 ## 1. Project Overview and Goals
 
 ### Problem statement
@@ -77,6 +81,8 @@ flowchart TD
     A --> V
 ```
 
+![Architecture Figure](../../images/architecture-overview.png)
+
 ### Component responsibilities
 
 #### Planner
@@ -153,6 +159,10 @@ The coordination model is linear with hard boundaries:
 4. Validator checks constraints and confidence behavior.
 
 This avoids hidden side effects and keeps debugging straightforward because each stage has explicit inputs and outputs logged to audit/debug channels.
+
+![End-to-End Sequence Figure](../../images/end-to-en-sequence.png)
+
+![LLM and Tool Call Trace Figure](../../images/call-1.png)
 
 ## 5. Tools and APIs Used
 
@@ -236,6 +246,8 @@ Using `demo.py`, three end-to-end interactions were executed with full agent loo
 - `transport_retransmits` -> category `transport`, top cause `Transport congestion or drops causing retransmissions`.
 
 Artifacts and traces are included under `examples/interactions/`.
+
+![Modern Chat GUI](../../images/gui.png)
 
 ### Failure modes observed
 - Incomplete/malformed pcap summary reduces transport-confidence quality.
