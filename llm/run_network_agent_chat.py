@@ -70,6 +70,7 @@ def _runtime_env() -> dict[str, str]:
 def _format_reply(payload: dict[str, Any]) -> str:
     diagnosis = payload.get("diagnosis", {})
     validation = payload.get("validation", {})
+    metadata = diagnosis.get("metadata", {}) if isinstance(diagnosis, dict) else {}
     causes = diagnosis.get("candidate_causes_ranked", [])
     top = causes[0] if isinstance(causes, list) and causes else {}
 
@@ -78,6 +79,16 @@ def _format_reply(payload: dict[str, Any]) -> str:
         f"Top cause: {top.get('title', 'n/a')}",
         f"Confidence: {diagnosis.get('confidence_score', 'n/a')}",
     ]
+    user_explanation = metadata.get("user_explanation")
+    if isinstance(user_explanation, str) and user_explanation.strip():
+        lines.append(f"Plain explanation: {user_explanation.strip()}")
+
+    commands_ran = metadata.get("commands_ran", [])
+    if isinstance(commands_ran, list) and commands_ran:
+        lines.append(f"Commands run: {', '.join(str(c) for c in commands_ran[:6])}")
+    logic = metadata.get("command_logic")
+    if isinstance(logic, str) and logic.strip():
+        lines.append(f"Logic: {logic.strip()}")
 
     remediation = diagnosis.get("remediation_plan", [])
     if isinstance(remediation, list) and remediation:
@@ -124,6 +135,7 @@ def main() -> int:
             "--host-os",
             "auto",
             "--collect-live-stats",
+            "--execute-proposed-commands",
         ]
         if use_llm_agents:
             cmd.extend(

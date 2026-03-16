@@ -14,6 +14,37 @@ class Generator:
             return float(max(0.0, min(1.0, value)))
         return default
 
+    def _parse_proposed_commands(self, value: object) -> list[str]:
+        commands: list[str] = []
+        if not isinstance(value, list):
+            return commands
+        for item in value:
+            cmd_text = ""
+            if isinstance(item, str):
+                cmd_text = item.strip()
+            elif isinstance(item, dict):
+                # Accept either {"command": "..."} or {"cmd": "..."} payload shapes.
+                cmd_text = str(item.get("command") or item.get("cmd") or "").strip()
+            if cmd_text:
+                commands.append(cmd_text)
+        return commands[:10]
+
+    def _build_logic_summary(self, commands: list[str], execution: ExecutionResult) -> str:
+        evidence = execution.executed_checks[:4]
+        if commands:
+            return (
+                f"Used command evidence from {', '.join(commands[:4])}; "
+                f"cross-checked against parsed checks {', '.join(evidence) if evidence else 'none'}."
+            )
+        return f"Derived from parsed checks {', '.join(evidence) if evidence else 'none'}."
+
+    def _plain_explanation(self, top_cause: str, remediation: list[str]) -> str:
+        first_step = remediation[0] if remediation else "collect one more round of network checks"
+        return (
+            f"In simple terms: the most likely issue is '{top_cause}'. "
+            f"Start with this action: {first_step}."
+        )
+
     def _default_proposed_commands(self, plan: PlannerPlan) -> list[str]:
         by_category = {
             Category.CONNECTIVITY: ["ping 8.8.8.8", "traceroute 8.8.8.8"],
@@ -80,14 +111,9 @@ class Generator:
         remediation_plan = llm_diag.get("remediation_plan", [])
         if not isinstance(remediation_plan, list) or not remediation_plan:
             remediation_plan = causes[0].remediation_steps
-        proposed_commands_raw = llm_diag.get("proposed_commands", [])
-        proposed_commands: list[str] = []
-        if isinstance(proposed_commands_raw, list):
-            for cmd in proposed_commands_raw:
-                cmd_text = str(cmd).strip()
-                if cmd_text:
-                    proposed_commands.append(cmd_text)
-        proposed_commands = proposed_commands[:10]
+        proposed_commands = self._parse_proposed_commands(llm_diag.get("proposed_commands", []))
+        logic_summary = str(llm_diag.get("command_logic") or self._build_logic_summary(proposed_commands, execution))
+        plain_explanation = str(llm_diag.get("plain_explanation") or self._plain_explanation(causes[0].title, [str(v) for v in remediation_plan]))
         problem_summary = str(
             llm_diag.get("problem_summary") or f"Category={plan.category.value} HostOS={plan.host_os.value}. {user_prompt.strip()}"
         )
@@ -104,6 +130,8 @@ class Generator:
                 "host_os": plan.host_os.value,
                 "generation_mode": "llm",
                 "proposed_commands": proposed_commands,
+                "command_logic": logic_summary,
+                "user_explanation": plain_explanation,
             },
         )
 
@@ -208,19 +236,23 @@ class Generator:
             )
 
         causes.sort(key=lambda c: c.confidence, reverse=True)
+        proposed_commands = self._default_proposed_commands(plan)
+        remediation_plan = causes[0].remediation_steps
         return Diagnosis(
             problem_summary=f"Category={plan.category.value} HostOS={plan.host_os.value}. {user_prompt.strip()}",
             candidate_causes_ranked=causes,
             confidence_score=top_conf,
             required_evidence=sorted({e for c in causes for e in c.required_evidence}),
-            remediation_plan=causes[0].remediation_steps,
+            remediation_plan=remediation_plan,
             metadata={
                 "selected_checks": plan.selected_checks,
                 "executed_checks": execution.executed_checks,
                 "missing_checks": execution.missing_checks,
                 "host_os": plan.host_os.value,
                 "generation_mode": "heuristic",
-                "proposed_commands": self._default_proposed_commands(plan),
+                "proposed_commands": proposed_commands,
+                "command_logic": self._build_logic_summary(proposed_commands, execution),
+                "user_explanation": self._plain_explanation(causes[0].title, remediation_plan),
             },
         )
 

@@ -360,6 +360,7 @@ network-agent \
   --prompt "I cannot reach 8.8.8.8 from this host" \
   --host-os auto \
   --collect-live-stats \
+  --execute-proposed-commands \
   --capture-seconds 30
 ```
 

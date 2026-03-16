@@ -38,6 +38,8 @@ class NetworkAgentChatGUI:
         self._is_busy = False
         self._loading_count = 0
         self._logo_image: tk.PhotoImage | None = None
+        self._command_tag_counter = 0
+        self._command_tag_map: dict[str, str] = {}
 
         self._configure_styles()
         self._build_layout()
@@ -166,7 +168,7 @@ class NetworkAgentChatGUI:
         self.chat_box = scrolledtext.ScrolledText(
             chat_card,
             wrap=tk.WORD,
-            state=tk.DISABLED,
+            state=tk.NORMAL,
             font=("Segoe UI", 11),
             bg="#fbfdff",
             fg="#17324f",
@@ -178,6 +180,8 @@ class NetworkAgentChatGUI:
         )
         self.chat_box.pack(fill=tk.BOTH, expand=True, padx=6, pady=6)
         self._configure_chat_tags()
+        self.chat_box.bind("<Key>", self._block_chat_edit)
+        self.chat_box.bind("<<Paste>>", lambda _: "break")
 
         input_card = tk.Frame(main, bg=self.CARD_BG, highlightbackground=self.CARD_BORDER, highlightthickness=1)
         input_card.pack(fill=tk.X)
@@ -249,6 +253,16 @@ class NetworkAgentChatGUI:
             rmargin=220,
             spacing3=10,
         )
+        self.chat_box.tag_configure(
+            "bubble_command",
+            background="#d9f0e2",
+            foreground="#0c5d35",
+            lmargin1=20,
+            lmargin2=20,
+            rmargin=230,
+            underline=True,
+            spacing3=6,
+        )
 
     def _set_status(self, text: str, badge: str | None = None) -> None:
         self.status_text.set(text)
@@ -283,13 +297,30 @@ class NetworkAgentChatGUI:
         }.get(speaker_key, "bubble_system")
 
         timestamp = datetime.now().strftime("%H:%M")
-        self.chat_box.configure(state=tk.NORMAL)
         self.chat_box.insert(tk.END, f"{speaker}  {timestamp}\n", meta_tag)
         for line in (message.strip() or " ").splitlines():
             self.chat_box.insert(tk.END, f"{line}\n", bubble_tag)
         self.chat_box.insert(tk.END, "\n")
         self.chat_box.see(tk.END)
-        self.chat_box.configure(state=tk.DISABLED)
+
+    def _append_agent(self, message: str, commands: list[str] | None = None) -> None:
+        self._append_chat("Agent", message)
+        if not commands:
+            return
+        self.chat_box.insert(tk.END, "Click to paste command:\n", "meta_agent")
+        for command in commands:
+            cmd = command.strip()
+            if not cmd:
+                continue
+            self._command_tag_counter += 1
+            tag = f"cmd_tag_{self._command_tag_counter}"
+            self._command_tag_map[tag] = cmd
+            self.chat_box.insert(tk.END, f"{cmd}\n", ("bubble_command", tag))
+            self.chat_box.tag_bind(tag, "<Button-1>", self._on_command_click)
+            self.chat_box.tag_bind(tag, "<Enter>", lambda _: self.chat_box.config(cursor="hand2"))
+            self.chat_box.tag_bind(tag, "<Leave>", lambda _: self.chat_box.config(cursor="xterm"))
+        self.chat_box.insert(tk.END, "\n")
+        self.chat_box.see(tk.END)
 
     def _append_system(self, message: str) -> None:
         self._append_chat("System", message)
@@ -297,8 +328,29 @@ class NetworkAgentChatGUI:
     def _append_user(self, message: str) -> None:
         self._append_chat("You", message)
 
-    def _append_agent(self, message: str) -> None:
-        self._append_chat("Agent", message)
+    def _on_command_click(self, event: tk.Event[Any]) -> None:
+        tags = self.chat_box.tag_names(f"@{event.x},{event.y}")
+        command = None
+        for tag in tags:
+            if tag.startswith("cmd_tag_"):
+                command = self._command_tag_map.get(tag)
+                break
+        if not command:
+            return
+        self.root.clipboard_clear()
+        self.root.clipboard_append(command)
+        self.input_box.configure(state=tk.NORMAL)
+        self.input_box.delete("1.0", tk.END)
+        self.input_box.insert("1.0", command)
+        self._set_status("Command pasted to input and copied to clipboard", "READY")
+
+    def _block_chat_edit(self, event: tk.Event[Any]) -> str | None:
+        ctrl_or_cmd = bool(event.state & 0x4) or bool(event.state & 0x8)
+        if ctrl_or_cmd and event.keysym.lower() in {"c", "a"}:
+            return None
+        if event.keysym in {"Left", "Right", "Up", "Down", "Prior", "Next", "Home", "End"}:
+            return None
+        return "break"
 
     def _set_busy(self, busy: bool) -> None:
         self._is_busy = busy
@@ -376,6 +428,7 @@ class NetworkAgentChatGUI:
                 "--host-os",
                 "auto",
                 "--collect-live-stats",
+                "--execute-proposed-commands",
             ]
             if self.llm_enabled.get():
                 model = self.model_name.get().strip() or "llama3.2"
@@ -415,16 +468,17 @@ class NetworkAgentChatGUI:
                 self.root.after(0, lambda: self._set_busy(False))
                 return
 
-            summary = self._format_agent_reply(payload)
-            self.root.after(0, lambda: self._append_agent(summary))
+            summary, command_suggestions = self._format_agent_reply(payload)
+            self.root.after(0, lambda: self._append_agent(summary, command_suggestions))
             self.root.after(0, lambda: self._set_status("Ready", "READY"))
             self.root.after(0, lambda: self._set_busy(False))
 
         threading.Thread(target=_run, daemon=True).start()
 
-    def _format_agent_reply(self, payload: dict[str, Any]) -> str:
+    def _format_agent_reply(self, payload: dict[str, Any]) -> tuple[str, list[str]]:
         diagnosis = payload.get("diagnosis", {})
         validation = payload.get("validation", {})
+        metadata = diagnosis.get("metadata", {}) if isinstance(diagnosis, dict) else {}
 
         top_cause = "n/a"
         causes = diagnosis.get("candidate_causes_ranked", [])
@@ -436,6 +490,16 @@ class NetworkAgentChatGUI:
             f"Top cause: {top_cause}",
             f"Confidence: {diagnosis.get('confidence_score', 'n/a')}",
         ]
+        user_explanation = metadata.get("user_explanation")
+        if isinstance(user_explanation, str) and user_explanation.strip():
+            lines.append(f"Plain explanation: {user_explanation.strip()}")
+
+        commands_ran = metadata.get("commands_ran", [])
+        if isinstance(commands_ran, list) and commands_ran:
+            lines.append(f"Commands run: {', '.join(str(c) for c in commands_ran[:6])}")
+        logic = metadata.get("command_logic")
+        if isinstance(logic, str) and logic.strip():
+            lines.append(f"Logic: {logic.strip()}")
 
         remediation = diagnosis.get("remediation_plan", [])
         if isinstance(remediation, list) and remediation:
@@ -447,7 +511,10 @@ class NetworkAgentChatGUI:
             lines.append("Validation notes:")
             lines.extend(f"- {reason}" for reason in notes)
 
-        return "\n".join(lines)
+        command_suggestions_raw = metadata.get("proposed_commands", [])
+        command_suggestions = [str(c).strip() for c in command_suggestions_raw] if isinstance(command_suggestions_raw, list) else []
+        command_suggestions = [c for c in command_suggestions if c]
+        return "\n".join(lines), command_suggestions
 
 
 def main() -> None:

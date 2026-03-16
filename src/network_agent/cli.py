@@ -37,6 +37,12 @@ def main() -> None:
         help="Duration for live packet capture checks (default: 30)",
     )
     parser.add_argument(
+        "--execute-proposed-commands",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Execute LLM-proposed troubleshooting commands before final summary (default: enabled)",
+    )
+    parser.add_argument(
         "--skip-topology",
         action="store_true",
         help="Disable network topology snapshot generation",
@@ -127,6 +133,7 @@ def main() -> None:
         collect_live_stats=args.collect_live_stats,
         allow_config_changes=args.allow_config_changes,
         capture_seconds=max(5, min(args.capture_seconds, 300)),
+        execute_proposed_commands=args.execute_proposed_commands,
         include_topology=not args.skip_topology,
         use_llm_critic=args.enable_llm_critic,
         capture_agent_prompts=bool(args.dump_agent_prompts),

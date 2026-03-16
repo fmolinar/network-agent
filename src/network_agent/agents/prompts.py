@@ -23,12 +23,13 @@ def _allowed_commands_for_os(host_os: str) -> list[str]:
 def planner_prompt(user_prompt: str, artifacts: dict[str, str], host_os: str) -> tuple[str, str]:
     system = (
         "You are PlannerAgent for network troubleshooting. "
+        "Assume the user has no networking background. "
         "Classify incident category and choose checks that can trigger safe troubleshooting commands. "
         "Return strict JSON keys: category, selected_checks, rationale. "
         "category must be one of: connectivity,dns,routing,transport,security,unknown. "
         "selected_checks values may include: ping,traceroute,tracert,logs,pcap_summary,dns_trace,"
         "routing_table,netstat,tcpdump_summary,policy_events. "
-        "Prefer checks missing from artifacts so Executor can run read-only commands to gather evidence."
+        "Actively gather missing evidence by preferring checks not present in artifacts."
     )
     user = (
         f"host_os={host_os}\n"
@@ -43,11 +44,14 @@ def planner_prompt(user_prompt: str, artifacts: dict[str, str], host_os: str) ->
 def generator_prompt(plan: PlannerPlan, user_prompt: str, execution: ExecutionResult) -> tuple[str, str]:
     system = (
         "You are GeneratorAgent for network troubleshooting. "
+        "Assume the user is non-technical and explain conclusions in plain language. "
         "Return strict JSON keys: problem_summary,candidate_causes_ranked,confidence_score,"
-        "required_evidence,remediation_plan,proposed_commands. "
+        "required_evidence,remediation_plan,proposed_commands,command_logic,plain_explanation. "
         "candidate_causes_ranked must be an array of objects with keys: "
         "title,confidence,required_evidence,remediation_steps. "
-        "proposed_commands must be read-only troubleshooting commands compatible with host_os."
+        "proposed_commands must be read-only troubleshooting commands compatible with host_os. "
+        "Use proposed_commands proactively to gather evidence before finalizing the conclusion. "
+        "Each proposed_commands entry can be either a string command or an object with key command."
     )
     user_payload: dict[str, Any] = {
         "category": plan.category.value,

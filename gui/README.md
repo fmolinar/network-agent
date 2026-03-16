@@ -72,6 +72,8 @@ llm\spin_llm.bat llama3.2
 - `Enter`: send message
 - `Shift+Enter`: newline in input box
 - `Working...` loader: visible whenever a background task is running
+- Agent command suggestions are clickable: click to copy + paste into the input box
+- Chat transcript text is selectable for copy/paste
 
 Tip: you can request capture duration directly in chat, for example:
 - `run a packet capture for 60 seconds and diagnose retransmits`

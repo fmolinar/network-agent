@@ -150,5 +150,7 @@ class AgentLLMConnector:
                     "traceroute 8.8.8.8",
                     "netstat -an",
                 ],
+                "plain_explanation": "The connection path looks unstable, so basic reachability and route checks are needed.",
+                "command_logic": "Run ping and traceroute first, then inspect socket state with netstat.",
             }
         return {}

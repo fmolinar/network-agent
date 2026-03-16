@@ -14,7 +14,7 @@ from network_agent.agents.prompts import generator_prompt, planner_prompt, valid
 from network_agent.agents.validator import Validator
 from network_agent.core.agent_llm import AgentLLMConfig, AgentLLMConnector
 from network_agent.core.audit import AuditLogger
-from network_agent.core.host_os import parse_host_os
+from network_agent.core.host_os import HostOS, parse_host_os
 from network_agent.core.llm import LLMCritic, LLMConfig
 from network_agent.core.safety import SafetyGate
 from network_agent.tools.network_checks import WhitelistedShellRunner
@@ -43,6 +43,69 @@ class NetworkTroubleshootingEngine:
         self.validator = Validator(safety_gate=self.safety_gate, llm_critic=LLMCritic(self.llm_config))
         self.audit = AuditLogger(path=Path(audit_path))
 
+    def _command_artifact_key(self, command: str, host_os: HostOS) -> str | None:
+        parts = command.strip().split()
+        if not parts:
+            return None
+        head = parts[0].lower()
+        if head == "ping":
+            return "ping"
+        if head in {"traceroute", "tracert"}:
+            return "traceroute"
+        if head in {"nslookup", "dig"}:
+            return "dns_trace"
+        if head == "netstat":
+            return "netstat"
+        if head == "route":
+            return "routing_table"
+        if head == "arp":
+            return "arp_table"
+        if head in {"ipconfig", "ifconfig", "ip"}:
+            return "interface_info"
+        if head == "tcpdump" and host_os != HostOS.WINDOWS:
+            return "pcap_summary"
+        return None
+
+    def _execute_proposed_commands(
+        self,
+        commands: list[str],
+        host_os: HostOS,
+        allow_config_changes: bool,
+        capture_seconds: int,
+    ) -> tuple[dict[str, str], dict[str, Any]]:
+        trace: dict[str, Any] = {"attempted": commands, "ran": [], "blocked": [], "errors": {}}
+        artifacts: dict[str, str] = {}
+        runner = self.executor.runner
+        if runner is None:
+            trace["errors"]["runner"] = "live runner not configured"
+            return artifacts, trace
+
+        for command in commands:
+            cmd = command.strip()
+            if not cmd:
+                continue
+            allowed, reason = self.safety_gate.check_command(cmd, user_approved=allow_config_changes)
+            if not allowed:
+                trace["blocked"].append(cmd)
+                trace["errors"][cmd] = reason or "command blocked"
+                continue
+
+            parts = cmd.split()
+            head = parts[0].lower() if parts else ""
+            timeout_override = capture_seconds + 3 if head == "tcpdump" else None
+            try:
+                output = runner.run(cmd, user_approved=allow_config_changes, timeout_seconds=timeout_override)
+            except Exception as exc:  # noqa: BLE001
+                trace["errors"][cmd] = str(exc)
+                continue
+
+            trace["ran"].append(cmd)
+            artifact_key = self._command_artifact_key(cmd, host_os)
+            if artifact_key and output:
+                artifacts[artifact_key] = output
+
+        return artifacts, trace
+
     def run(
         self,
         user_prompt: str,
@@ -50,6 +113,7 @@ class NetworkTroubleshootingEngine:
         collect_live_stats: bool = False,
         allow_config_changes: bool = False,
         capture_seconds: int = 30,
+        execute_proposed_commands: bool = True,
         include_topology: bool = True,
         use_llm_critic: bool = False,
         capture_agent_prompts: bool = False,
@@ -127,6 +191,69 @@ class NetworkTroubleshootingEngine:
         self.audit.log("generator.generate", asdict(diagnosis))
         _op_end(gen_t0, gen_entry, asdict(diagnosis))
 
+        command_trace: dict[str, Any] = {"attempted": [], "ran": [], "blocked": [], "errors": {}}
+        proposed_commands = diagnosis.metadata.get("proposed_commands", [])
+        if not isinstance(proposed_commands, list):
+            proposed_commands = []
+        proposed_commands = [str(c).strip() for c in proposed_commands if str(c).strip()]
+
+        if execute_proposed_commands and collect_live_stats and proposed_commands:
+            cmd_t0, cmd_entry = _op_start(
+                "executor",
+                "run_proposed_commands",
+                {"proposed_commands": proposed_commands, "capture_seconds": capture_seconds},
+            )
+            extra_artifacts, command_trace = self._execute_proposed_commands(
+                proposed_commands,
+                self.host_os,
+                allow_config_changes=allow_config_changes,
+                capture_seconds=capture_seconds,
+            )
+            cmd_entry_output = {
+                "ran": command_trace.get("ran", []),
+                "blocked": command_trace.get("blocked", []),
+                "errors": command_trace.get("errors", {}),
+                "artifact_keys": sorted(extra_artifacts.keys()),
+            }
+            _op_end(cmd_t0, cmd_entry, cmd_entry_output)
+            self.audit.log("executor.run_proposed_commands", cmd_entry_output)
+
+            if extra_artifacts:
+                merged_artifacts = dict(artifacts)
+                merged_artifacts.update(execution.raw_outputs)
+                merged_artifacts.update(extra_artifacts)
+                execution = self.executor.run(
+                    plan,
+                    merged_artifacts,
+                    user_prompt=user_prompt,
+                    collect_live_stats=False,
+                    allow_config_changes=allow_config_changes,
+                    capture_seconds=capture_seconds,
+                    include_topology=include_topology,
+                )
+                self.audit.log("executor.run_after_proposed_commands", asdict(execution))
+
+                regen_t0, regen_entry = _op_start(
+                    "generator",
+                    "generate_after_proposed_commands",
+                    {"executed_checks": execution.executed_checks},
+                )
+                diagnosis = self.generator.generate(plan, user_prompt, execution)
+                _op_end(regen_t0, regen_entry, asdict(diagnosis))
+                self.audit.log("generator.generate_after_proposed_commands", asdict(diagnosis))
+
+            commands_ran = command_trace.get("ran", [])
+            commands_blocked = command_trace.get("blocked", [])
+            diagnosis.metadata["commands_attempted"] = proposed_commands
+            diagnosis.metadata["commands_ran"] = commands_ran
+            diagnosis.metadata["commands_blocked"] = commands_blocked
+            diagnosis.metadata["command_errors"] = command_trace.get("errors", {})
+            logic = diagnosis.metadata.get("command_logic")
+            if not logic:
+                checks = ", ".join(execution.executed_checks[:4]) if execution.executed_checks else "none"
+                logic = f"Compared outputs from executed checks ({checks}) to rank the top cause."
+                diagnosis.metadata["command_logic"] = logic
+
         val_t0, val_entry = _op_start(
             "validator",
             "validate",
@@ -142,7 +269,7 @@ class NetworkTroubleshootingEngine:
         validation = self.validator.validate(
             diagnosis,
             execution,
-            proposed_commands=[str(c) for c in proposed_commands],
+            proposed_commands=[str(c) for c in proposed_commands if str(c).strip()],
             use_llm_critic=use_llm_critic,
         )
         self.audit.log("validator.validate", asdict(validation))
