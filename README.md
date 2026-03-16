@@ -3,6 +3,53 @@
 `network-agent` is a multi-agent troubleshooting framework for internet connectivity incidents.
 It analyzes user reports plus network artifacts (`ping`, `traceroute`, logs, and pcap summaries) to identify likely root causes and produce safe remediation guidance.
 
+## Project Submission Summary
+
+### Domain choice
+- **Chosen domain:** Other approved domain - Network Troubleshooting Agent.
+
+### Short project description
+- The agent diagnoses connectivity incidents by coordinating planner, executor, generator, and validator stages.
+- It supports deterministic analysis plus optional local/offline LLM assistance.
+- It enforces command safety and produces auditable traces.
+
+### Primary demo entrypoint
+- Script: [`demo.py`](demo.py)
+- Runs three end-to-end sample interactions and writes artifacts to `examples/interactions/`.
+
+### Instructor quick run (local)
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .[dev]
+PYTHONPATH=src python3 demo.py --output-dir examples/interactions
+pytest -q
+```
+
+Windows CMD/PowerShell:
+```bat
+py -m venv .venv
+.venv\\Scripts\\activate
+pip install -e .[dev]
+set PYTHONPATH=src
+py demo.py --output-dir examples/interactions
+pytest -q
+```
+
+### Credentials and security notes
+- No secrets are committed in this repository.
+- API keys must be injected via environment variables only (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `NETWORK_AGENT_LLM_API_KEY`, etc.).
+- Local/offline mode is supported through Ollama and mock providers.
+- Safety gate blocks destructive tokens and requires approval for mutation-prone commands.
+
+### Required design and validation documents
+- Written report: [`docs/report/PROJECT_REPORT.md`](docs/report/PROJECT_REPORT.md)
+- Architecture overview: [`docs/design/ARCHITECTURE_OVERVIEW.md`](docs/design/ARCHITECTURE_OVERVIEW.md)
+- LLM/tool call sequence: [`docs/design/CALL_FLOW.md`](docs/design/CALL_FLOW.md)
+- Prompt templates: [`docs/design/PROMPT_TEMPLATES.md`](docs/design/PROMPT_TEMPLATES.md)
+- Validation artifacts: [`docs/validation/VALIDATION_ARTIFACTS.md`](docs/validation/VALIDATION_ARTIFACTS.md)
+- Example interactions: [`examples/INTERACTIONS.md`](examples/INTERACTIONS.md)
+
 ## Goals
 - Diagnose common network failures: connectivity, DNS, routing, transport, and security.
 - Rank candidate root causes with explicit confidence and evidence requirements.

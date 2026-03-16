@@ -1,0 +1,263 @@
+{
+  "plan": {
+    "category": "dns",
+    "selected_checks": [
+      "logs",
+      "dns_trace",
+      "ping"
+    ],
+    "rationale": "classified as dns on host_os=linux",
+    "host_os": "linux"
+  },
+  "diagnosis": {
+    "problem_summary": "Category=dns HostOS=linux. I can ping 1.1.1.1 but hostnames fail to resolve.",
+    "candidate_causes_ranked": [
+      {
+        "title": "DNS resolution failure",
+        "confidence": 0.82,
+        "required_evidence": [
+          "logs.dns_failure",
+          "resolver config"
+        ],
+        "remediation_steps": [
+          "Validate resolver settings (platform-specific DNS config)",
+          "Try alternate resolvers (1.1.1.1, 8.8.8.8)",
+          "Flush DNS cache and retry"
+        ]
+      }
+    ],
+    "confidence_score": 0.82,
+    "required_evidence": [
+      "logs.dns_failure",
+      "resolver config"
+    ],
+    "remediation_plan": [
+      "Validate resolver settings (platform-specific DNS config)",
+      "Try alternate resolvers (1.1.1.1, 8.8.8.8)",
+      "Flush DNS cache and retry"
+    ],
+    "metadata": {
+      "selected_checks": [
+        "logs",
+        "dns_trace",
+        "ping"
+      ],
+      "executed_checks": [
+        "logs",
+        "ping"
+      ],
+      "missing_checks": [
+        "dns_trace"
+      ],
+      "host_os": "linux",
+      "generation_mode": "heuristic"
+    }
+  },
+  "validation": {
+    "valid": true,
+    "reasons": [],
+    "needs_llm_critic": false,
+    "blocked_operations": [],
+    "llm_critic": {}
+  },
+  "execution": {
+    "raw_outputs": {
+      "logs": "resolver: temporary failure in name resolution\napplication: getaddrinfo failed for api.service.local\n",
+      "ping": "5 packets transmitted, 5 received, 0% packet loss\nrtt min/avg/max/mdev = 9.0/11.0/15.0/1.0 ms\n"
+    },
+    "parsed_outputs": {
+      "logs": {
+        "dns_failure": true,
+        "tls_error": false,
+        "auth_block": false
+      },
+      "ping": {
+        "packet_loss_pct": 0.0,
+        "rtt_min_ms": 9.0,
+        "rtt_avg_ms": 11.0,
+        "rtt_max_ms": 15.0
+      }
+    },
+    "executed_checks": [
+      "logs",
+      "ping"
+    ],
+    "missing_checks": [
+      "dns_trace"
+    ],
+    "host_os": "linux",
+    "network_topology": {
+      "host_os": "linux",
+      "default_gateway": null,
+      "route_count": 0,
+      "routes": [],
+      "hop_count": 3,
+      "hops": [
+        "192.168.1.1",
+        "10.0.0.1",
+        "1.1.1.1"
+      ],
+      "neighbor_count": 0,
+      "neighbors": [],
+      "interfaces": []
+    },
+    "collection_attempts": {},
+    "collection_errors": {}
+  },
+  "debug": {
+    "request_id": "b25fe81a-fbd9-4b2d-b974-6b6c7168cd8e",
+    "started_at": "2026-03-15T21:11:53.017209+00:00",
+    "finished_at": "2026-03-15T21:11:53.017930+00:00",
+    "duration_ms": 0.724,
+    "host_os": "linux",
+    "agent_operations": [
+      {
+        "agent": "planner",
+        "operation": "plan",
+        "started_at": "2026-03-15T21:11:53.017289+00:00",
+        "input": {
+          "user_prompt": "I can ping 1.1.1.1 but hostnames fail to resolve.",
+          "artifact_keys": [
+            "logs",
+            "pcap_summary",
+            "ping",
+            "traceroute"
+          ],
+          "host_os": "linux"
+        },
+        "finished_at": "2026-03-15T21:11:53.017599+00:00",
+        "duration_ms": 0.316,
+        "output": {
+          "category": "dns",
+          "selected_checks": [
+            "logs",
+            "dns_trace",
+            "ping"
+          ],
+          "rationale": "classified as dns on host_os=linux",
+          "host_os": "linux"
+        }
+      },
+      {
+        "agent": "executor",
+        "operation": "run",
+        "started_at": "2026-03-15T21:11:53.017610+00:00",
+        "input": {
+          "selected_checks": [
+            "logs",
+            "dns_trace",
+            "ping"
+          ],
+          "collect_live_stats": false,
+          "allow_config_changes": false,
+          "capture_seconds": 30,
+          "include_topology": true
+        },
+        "finished_at": "2026-03-15T21:11:53.017763+00:00",
+        "duration_ms": 0.156,
+        "output": {
+          "executed_checks": [
+            "logs",
+            "ping"
+          ],
+          "missing_checks": [
+            "dns_trace"
+          ],
+          "collection_attempts": {},
+          "collection_errors": {},
+          "network_topology": {
+            "host_os": "linux",
+            "default_gateway": null,
+            "route_count": 0,
+            "routes": [],
+            "hop_count": 3,
+            "hops": [
+              "192.168.1.1",
+              "10.0.0.1",
+              "1.1.1.1"
+            ],
+            "neighbor_count": 0,
+            "neighbors": [],
+            "interfaces": []
+          }
+        }
+      },
+      {
+        "agent": "generator",
+        "operation": "generate",
+        "started_at": "2026-03-15T21:11:53.017768+00:00",
+        "input": {
+          "category": "dns",
+          "executed_checks": [
+            "logs",
+            "ping"
+          ]
+        },
+        "finished_at": "2026-03-15T21:11:53.017852+00:00",
+        "duration_ms": 0.086,
+        "output": {
+          "problem_summary": "Category=dns HostOS=linux. I can ping 1.1.1.1 but hostnames fail to resolve.",
+          "candidate_causes_ranked": [
+            {
+              "title": "DNS resolution failure",
+              "confidence": 0.82,
+              "required_evidence": [
+                "logs.dns_failure",
+                "resolver config"
+              ],
+              "remediation_steps": [
+                "Validate resolver settings (platform-specific DNS config)",
+                "Try alternate resolvers (1.1.1.1, 8.8.8.8)",
+                "Flush DNS cache and retry"
+              ]
+            }
+          ],
+          "confidence_score": 0.82,
+          "required_evidence": [
+            "logs.dns_failure",
+            "resolver config"
+          ],
+          "remediation_plan": [
+            "Validate resolver settings (platform-specific DNS config)",
+            "Try alternate resolvers (1.1.1.1, 8.8.8.8)",
+            "Flush DNS cache and retry"
+          ],
+          "metadata": {
+            "selected_checks": [
+              "logs",
+              "dns_trace",
+              "ping"
+            ],
+            "executed_checks": [
+              "logs",
+              "ping"
+            ],
+            "missing_checks": [
+              "dns_trace"
+            ],
+            "host_os": "linux",
+            "generation_mode": "heuristic"
+          }
+        }
+      },
+      {
+        "agent": "validator",
+        "operation": "validate",
+        "started_at": "2026-03-15T21:11:53.017855+00:00",
+        "input": {
+          "use_llm_critic": true,
+          "confidence_score": 0.82
+        },
+        "finished_at": "2026-03-15T21:11:53.017913+00:00",
+        "duration_ms": 0.059,
+        "output": {
+          "valid": true,
+          "reasons": [],
+          "needs_llm_critic": false,
+          "blocked_operations": [],
+          "llm_critic": {}
+        }
+      }
+    ]
+  }
+}

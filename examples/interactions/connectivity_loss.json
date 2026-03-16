@@ -1,0 +1,296 @@
+{
+  "plan": {
+    "category": "connectivity",
+    "selected_checks": [
+      "ping",
+      "traceroute",
+      "logs"
+    ],
+    "rationale": "classified as connectivity on host_os=linux",
+    "host_os": "linux"
+  },
+  "diagnosis": {
+    "problem_summary": "Category=connectivity HostOS=linux. I cannot reach internet services reliably; pages time out and packet loss looks high.",
+    "candidate_causes_ranked": [
+      {
+        "title": "High packet loss indicates unstable or broken link",
+        "confidence": 0.85,
+        "required_evidence": [
+          "packet_loss_pct",
+          "traceroute timeouts"
+        ],
+        "remediation_steps": [
+          "Check physical link/Wi-Fi signal and interface errors",
+          "Restart local gateway/router",
+          "Test from another host to isolate host vs network"
+        ]
+      },
+      {
+        "title": "Upstream routing path instability",
+        "confidence": 0.78,
+        "required_evidence": [
+          "traceroute.timeout_ratio",
+          "gateway metrics"
+        ],
+        "remediation_steps": [
+          "Check gateway health and route advertisements",
+          "Review ISP/upstream incidents",
+          "Force alternate route if available"
+        ]
+      }
+    ],
+    "confidence_score": 0.85,
+    "required_evidence": [
+      "gateway metrics",
+      "packet_loss_pct",
+      "traceroute timeouts",
+      "traceroute.timeout_ratio"
+    ],
+    "remediation_plan": [
+      "Check physical link/Wi-Fi signal and interface errors",
+      "Restart local gateway/router",
+      "Test from another host to isolate host vs network"
+    ],
+    "metadata": {
+      "selected_checks": [
+        "ping",
+        "traceroute",
+        "logs"
+      ],
+      "executed_checks": [
+        "ping",
+        "traceroute",
+        "logs"
+      ],
+      "missing_checks": [],
+      "host_os": "linux",
+      "generation_mode": "heuristic"
+    }
+  },
+  "validation": {
+    "valid": true,
+    "reasons": [],
+    "needs_llm_critic": false,
+    "blocked_operations": [],
+    "llm_critic": {}
+  },
+  "execution": {
+    "raw_outputs": {
+      "ping": "PING 8.8.8.8 (8.8.8.8): 56 data bytes\nRequest timeout for icmp_seq 0\n64 bytes from 8.8.8.8: icmp_seq=1 ttl=116 time=31.1 ms\nRequest timeout for icmp_seq 2\n64 bytes from 8.8.8.8: icmp_seq=3 ttl=116 time=33.0 ms\n\n--- 8.8.8.8 ping statistics ---\n4 packets transmitted, 2 packets received, 50.0% packet loss\nround-trip min/avg/max/stddev = 31.1/32.0/33.0/0.95 ms\n",
+      "traceroute": "traceroute to 8.8.8.8, 64 hops max\n1  192.168.1.1  2.120 ms  2.040 ms  2.005 ms\n2  * * *\n3  * * *\n4  10.12.0.1  50.281 ms  49.808 ms  50.112 ms\n",
+      "logs": "networkd: link up on wlan0\nkernel: high rx_dropped observed on wlan0\n"
+    },
+    "parsed_outputs": {
+      "ping": {
+        "packet_loss_pct": 50.0,
+        "rtt_min_ms": 31.1,
+        "rtt_avg_ms": 32.0,
+        "rtt_max_ms": 33.0
+      },
+      "traceroute": {
+        "hop_count": 4,
+        "timeout_hops": 2,
+        "timeout_ratio": 0.5
+      },
+      "logs": {
+        "dns_failure": false,
+        "tls_error": false,
+        "auth_block": false
+      }
+    },
+    "executed_checks": [
+      "ping",
+      "traceroute",
+      "logs"
+    ],
+    "missing_checks": [],
+    "host_os": "linux",
+    "network_topology": {
+      "host_os": "linux",
+      "default_gateway": null,
+      "route_count": 0,
+      "routes": [],
+      "hop_count": 3,
+      "hops": [
+        "8.8.8.8",
+        "192.168.1.1",
+        "10.12.0.1"
+      ],
+      "neighbor_count": 0,
+      "neighbors": [],
+      "interfaces": []
+    },
+    "collection_attempts": {},
+    "collection_errors": {}
+  },
+  "debug": {
+    "request_id": "8f0ad051-f1da-40f1-a3fc-0b2cc194d444",
+    "started_at": "2026-03-15T21:11:53.018334+00:00",
+    "finished_at": "2026-03-15T21:11:53.018887+00:00",
+    "duration_ms": 0.555,
+    "host_os": "linux",
+    "agent_operations": [
+      {
+        "agent": "planner",
+        "operation": "plan",
+        "started_at": "2026-03-15T21:11:53.018337+00:00",
+        "input": {
+          "user_prompt": "I cannot reach internet services reliably; pages time out and packet loss looks high.",
+          "artifact_keys": [
+            "logs",
+            "pcap_summary",
+            "ping",
+            "traceroute"
+          ],
+          "host_os": "linux"
+        },
+        "finished_at": "2026-03-15T21:11:53.018600+00:00",
+        "duration_ms": 0.265,
+        "output": {
+          "category": "connectivity",
+          "selected_checks": [
+            "ping",
+            "traceroute",
+            "logs"
+          ],
+          "rationale": "classified as connectivity on host_os=linux",
+          "host_os": "linux"
+        }
+      },
+      {
+        "agent": "executor",
+        "operation": "run",
+        "started_at": "2026-03-15T21:11:53.018603+00:00",
+        "input": {
+          "selected_checks": [
+            "ping",
+            "traceroute",
+            "logs"
+          ],
+          "collect_live_stats": false,
+          "allow_config_changes": false,
+          "capture_seconds": 30,
+          "include_topology": true
+        },
+        "finished_at": "2026-03-15T21:11:53.018709+00:00",
+        "duration_ms": 0.107,
+        "output": {
+          "executed_checks": [
+            "ping",
+            "traceroute",
+            "logs"
+          ],
+          "missing_checks": [],
+          "collection_attempts": {},
+          "collection_errors": {},
+          "network_topology": {
+            "host_os": "linux",
+            "default_gateway": null,
+            "route_count": 0,
+            "routes": [],
+            "hop_count": 3,
+            "hops": [
+              "8.8.8.8",
+              "192.168.1.1",
+              "10.12.0.1"
+            ],
+            "neighbor_count": 0,
+            "neighbors": [],
+            "interfaces": []
+          }
+        }
+      },
+      {
+        "agent": "generator",
+        "operation": "generate",
+        "started_at": "2026-03-15T21:11:53.018711+00:00",
+        "input": {
+          "category": "connectivity",
+          "executed_checks": [
+            "ping",
+            "traceroute",
+            "logs"
+          ]
+        },
+        "finished_at": "2026-03-15T21:11:53.018808+00:00",
+        "duration_ms": 0.098,
+        "output": {
+          "problem_summary": "Category=connectivity HostOS=linux. I cannot reach internet services reliably; pages time out and packet loss looks high.",
+          "candidate_causes_ranked": [
+            {
+              "title": "High packet loss indicates unstable or broken link",
+              "confidence": 0.85,
+              "required_evidence": [
+                "packet_loss_pct",
+                "traceroute timeouts"
+              ],
+              "remediation_steps": [
+                "Check physical link/Wi-Fi signal and interface errors",
+                "Restart local gateway/router",
+                "Test from another host to isolate host vs network"
+              ]
+            },
+            {
+              "title": "Upstream routing path instability",
+              "confidence": 0.78,
+              "required_evidence": [
+                "traceroute.timeout_ratio",
+                "gateway metrics"
+              ],
+              "remediation_steps": [
+                "Check gateway health and route advertisements",
+                "Review ISP/upstream incidents",
+                "Force alternate route if available"
+              ]
+            }
+          ],
+          "confidence_score": 0.85,
+          "required_evidence": [
+            "gateway metrics",
+            "packet_loss_pct",
+            "traceroute timeouts",
+            "traceroute.timeout_ratio"
+          ],
+          "remediation_plan": [
+            "Check physical link/Wi-Fi signal and interface errors",
+            "Restart local gateway/router",
+            "Test from another host to isolate host vs network"
+          ],
+          "metadata": {
+            "selected_checks": [
+              "ping",
+              "traceroute",
+              "logs"
+            ],
+            "executed_checks": [
+              "ping",
+              "traceroute",
+              "logs"
+            ],
+            "missing_checks": [],
+            "host_os": "linux",
+            "generation_mode": "heuristic"
+          }
+        }
+      },
+      {
+        "agent": "validator",
+        "operation": "validate",
+        "started_at": "2026-03-15T21:11:53.018810+00:00",
+        "input": {
+          "use_llm_critic": true,
+          "confidence_score": 0.85
+        },
+        "finished_at": "2026-03-15T21:11:53.018867+00:00",
+        "duration_ms": 0.058,
+        "output": {
+          "valid": true,
+          "reasons": [],
+          "needs_llm_critic": false,
+          "blocked_operations": [],
+          "llm_critic": {}
+        }
+      }
+    ]
+  }
+}
