@@ -54,9 +54,11 @@ class LLMCritic:
 
     def _build_prompt(self, payload: dict[str, Any]) -> str:
         return (
-            "You are a network diagnostics critic. Review the diagnosis for consistency and safety. "
-            "Return strict JSON with keys: verdict, confidence, notes, suggested_evidence. "
-            "verdict must be one of: accept, caution, reject.\n\n"
+            "You are a network diagnostics critic. Review the diagnosis for consistency, safety, and whether the "
+            "issue appears resolved. If the issue appears resolved but user_issue_stopped is null, ask for explicit "
+            "user confirmation before closure. Return strict JSON with keys: verdict, confidence, "
+            "issue_resolved_likely, needs_user_confirmation, confirmation_question, close_chat, "
+            "closure_acknowledgement, notes, suggested_evidence. verdict must be one of: accept, caution, reject.\n\n"
             f"Input:\n{json.dumps(payload, indent=2, sort_keys=True)}"
         )
 

@@ -18,6 +18,7 @@ class Validator:
         execution: ExecutionResult,
         proposed_commands: list[str] | None = None,
         approved_commands: set[str] | None = None,
+        user_issue_stopped: bool | None = None,
         use_llm_critic: bool = False,
     ) -> ValidationResult:
         reasons: list[str] = []
@@ -67,6 +68,7 @@ class Validator:
                         "host_os": execution.host_os.value,
                         "network_topology": execution.network_topology,
                     },
+                    "user_issue_stopped": user_issue_stopped,
                 }
             )
             verdict = str(llm_result.get("verdict", "")).lower()
@@ -75,10 +77,21 @@ class Validator:
             elif verdict == "caution":
                 reasons.append("llm critic requested additional evidence")
 
+        needs_user_confirmation = user_issue_stopped is None
+        confirmation_question = "Has the issue stopped after trying the recommended steps?"
+        chat_should_close = user_issue_stopped is True
+        resolved_acknowledgement = (
+            "Thanks for confirming. Since the issue has stopped, I am closing this troubleshooting chat."
+        )
+
         return ValidationResult(
             valid=not reasons,
             reasons=reasons,
             needs_llm_critic=ambiguous,
             blocked_operations=blocked,
             llm_critic=llm_result,
+            needs_user_confirmation=needs_user_confirmation,
+            confirmation_question=confirmation_question if needs_user_confirmation else "",
+            chat_should_close=chat_should_close,
+            resolved_acknowledgement=resolved_acknowledgement,
         )

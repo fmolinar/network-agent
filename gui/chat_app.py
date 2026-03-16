@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import threading
 import tkinter as tk
@@ -26,9 +27,8 @@ class NetworkAgentChatGUI:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
         self.root.title("Network Agent")
-        self.root.geometry("980x700")
-        self.root.minsize(840, 580)
         self.root.configure(bg=self.BG)
+        self._set_initial_geometry()
 
         self.python_bin = self._resolve_python_bin()
         self.llm_enabled = tk.BooleanVar(value=True)
@@ -40,6 +40,9 @@ class NetworkAgentChatGUI:
         self._logo_image: tk.PhotoImage | None = None
         self._command_tag_counter = 0
         self._command_tag_map: dict[str, str] = {}
+        self._awaiting_resolution_confirmation = False
+        self._resolved_ack = "Thanks for confirming. Since the issue has stopped, I am closing this troubleshooting chat."
+        self._chat_closed = False
 
         self._configure_styles()
         self._build_layout()
@@ -47,6 +50,20 @@ class NetworkAgentChatGUI:
             "Welcome to Network Agent. Describe your network issue in the chat box below.\n"
             "The app attempts to start the local LLM automatically and will fall back to manual mode if unavailable."
         )
+
+    def _set_initial_geometry(self) -> None:
+        screen_w = self.root.winfo_screenwidth()
+        screen_h = self.root.winfo_screenheight()
+        max_w = max(760, screen_w - 80)
+        max_h = max(520, screen_h - 120)
+        width = min(980, max_w)
+        height = min(700, max_h)
+        min_w = max(680, min(840, max_w))
+        min_h = max(460, min(580, max_h))
+        pos_x = max(20, (screen_w - width) // 2)
+        pos_y = max(20, (screen_h - height) // 2)
+        self.root.geometry(f"{width}x{height}+{pos_x}+{pos_y}")
+        self.root.minsize(min_w, min_h)
 
     def _configure_styles(self) -> None:
         style = ttk.Style(self.root)
@@ -180,7 +197,11 @@ class NetworkAgentChatGUI:
         )
         self.chat_box.pack(fill=tk.BOTH, expand=True, padx=6, pady=6)
         self._configure_chat_tags()
-        self.chat_box.bind("<Key>", self._block_chat_edit)
+        self.chat_box.configure(state=tk.DISABLED)
+        self.chat_box.bind("<Control-a>", self._select_all_chat)
+        self.chat_box.bind("<Control-c>", self._copy_chat_selection)
+        self.chat_box.bind("<Command-a>", self._select_all_chat)
+        self.chat_box.bind("<Command-c>", self._copy_chat_selection)
         self.chat_box.bind("<<Paste>>", lambda _: "break")
 
         input_card = tk.Frame(main, bg=self.CARD_BG, highlightbackground=self.CARD_BORDER, highlightthickness=1)
@@ -283,6 +304,24 @@ class NetworkAgentChatGUI:
             self.loading_bar.stop()
             self.loading_row.pack_forget()
 
+    def _set_chat_editable(self, editable: bool) -> None:
+        self.chat_box.configure(state=tk.NORMAL if editable else tk.DISABLED)
+
+    def _select_all_chat(self, _: tk.Event[Any]) -> str:
+        self.chat_box.tag_add(tk.SEL, "1.0", tk.END)
+        self.chat_box.mark_set(tk.INSERT, "1.0")
+        self.chat_box.see(tk.INSERT)
+        return "break"
+
+    def _copy_chat_selection(self, _: tk.Event[Any]) -> str:
+        try:
+            selected = self.chat_box.get(tk.SEL_FIRST, tk.SEL_LAST)
+        except tk.TclError:
+            return "break"
+        self.root.clipboard_clear()
+        self.root.clipboard_append(selected)
+        return "break"
+
     def _append_chat(self, speaker: str, message: str) -> None:
         speaker_key = speaker.lower()
         meta_tag = {
@@ -297,16 +336,19 @@ class NetworkAgentChatGUI:
         }.get(speaker_key, "bubble_system")
 
         timestamp = datetime.now().strftime("%H:%M")
+        self._set_chat_editable(True)
         self.chat_box.insert(tk.END, f"{speaker}  {timestamp}\n", meta_tag)
         for line in (message.strip() or " ").splitlines():
             self.chat_box.insert(tk.END, f"{line}\n", bubble_tag)
         self.chat_box.insert(tk.END, "\n")
         self.chat_box.see(tk.END)
+        self._set_chat_editable(False)
 
     def _append_agent(self, message: str, commands: list[str] | None = None) -> None:
         self._append_chat("Agent", message)
         if not commands:
             return
+        self._set_chat_editable(True)
         self.chat_box.insert(tk.END, "Click to paste command:\n", "meta_agent")
         for command in commands:
             cmd = command.strip()
@@ -321,6 +363,7 @@ class NetworkAgentChatGUI:
             self.chat_box.tag_bind(tag, "<Leave>", lambda _: self.chat_box.config(cursor="xterm"))
         self.chat_box.insert(tk.END, "\n")
         self.chat_box.see(tk.END)
+        self._set_chat_editable(False)
 
     def _append_system(self, message: str) -> None:
         self._append_chat("System", message)
@@ -344,13 +387,18 @@ class NetworkAgentChatGUI:
         self.input_box.insert("1.0", command)
         self._set_status("Command pasted to input and copied to clipboard", "READY")
 
-    def _block_chat_edit(self, event: tk.Event[Any]) -> str | None:
-        ctrl_or_cmd = bool(event.state & 0x4) or bool(event.state & 0x8)
-        if ctrl_or_cmd and event.keysym.lower() in {"c", "a"}:
-            return None
-        if event.keysym in {"Left", "Right", "Up", "Down", "Prior", "Next", "Home", "End"}:
-            return None
-        return "break"
+    def _parse_confirmation_response(self, text: str) -> bool | None:
+        normalized = re.sub(r"[^a-z0-9\s]", " ", text.lower()).strip()
+        if normalized in {"yes", "y", "yeah", "yep", "fixed", "resolved"}:
+            return True
+        if normalized in {"no", "n", "nope", "nah"}:
+            return False
+        if any(token in normalized for token in ("not yet", "still", "persists", "doesn't work", "does not work")):
+            return False
+        if any(token in normalized for token in ("issue stopped", "works now", "all good", "resolved", "fixed now")):
+            if "not" not in normalized:
+                return True
+        return None
 
     def _set_busy(self, busy: bool) -> None:
         self._is_busy = busy
@@ -415,6 +463,29 @@ class NetworkAgentChatGUI:
 
         self.input_box.delete("1.0", tk.END)
         self._append_user(prompt)
+
+        if self._awaiting_resolution_confirmation:
+            confirmed = self._parse_confirmation_response(prompt)
+            if confirmed is True:
+                self._append_agent(self._resolved_ack)
+                self._set_status("Issue resolved", "RESOLVED")
+                self._awaiting_resolution_confirmation = False
+                self._chat_closed = True
+                return
+            if confirmed is False:
+                self._append_agent(
+                    "Thanks for confirming the issue is still happening. Share the latest symptom or run a suggested command and I will continue troubleshooting."
+                )
+                self._set_status("Continuing troubleshooting", "READY")
+                self._awaiting_resolution_confirmation = False
+                self._chat_closed = False
+                return
+            self._awaiting_resolution_confirmation = False
+
+        if self._chat_closed:
+            self._chat_closed = False
+            self._append_system("Starting a new troubleshooting session.")
+
         self._set_busy(True)
         self._set_status("Running diagnosis...", "WORKING")
 
@@ -468,10 +539,23 @@ class NetworkAgentChatGUI:
                 self.root.after(0, lambda: self._set_busy(False))
                 return
 
-            summary, command_suggestions = self._format_agent_reply(payload)
-            self.root.after(0, lambda: self._append_agent(summary, command_suggestions))
-            self.root.after(0, lambda: self._set_status("Ready", "READY"))
-            self.root.after(0, lambda: self._set_busy(False))
+            def _render() -> None:
+                summary, command_suggestions = self._format_agent_reply(payload)
+                self._append_agent(summary, command_suggestions)
+                validation = payload.get("validation", {})
+                if isinstance(validation, dict):
+                    needs_confirmation = bool(validation.get("needs_user_confirmation"))
+                    question = str(validation.get("confirmation_question") or "").strip()
+                    resolved_ack = str(validation.get("resolved_acknowledgement") or "").strip()
+                    if resolved_ack:
+                        self._resolved_ack = resolved_ack
+                    if needs_confirmation:
+                        self._awaiting_resolution_confirmation = True
+                        self._append_agent(question or "Has the issue stopped?")
+                self._set_status("Ready", "READY")
+                self._set_busy(False)
+
+            self.root.after(0, _render)
 
         threading.Thread(target=_run, daemon=True).start()
 

@@ -18,6 +18,7 @@ def test_engine_connectivity_case() -> None:
     assert "network_topology" in result["execution"]
     assert "hop_count" in result["execution"]["network_topology"]
     assert "validation" in result
+    assert result["validation"]["needs_user_confirmation"] is True
 
 
 def test_engine_debug_mode_exposes_agent_trace() -> None:

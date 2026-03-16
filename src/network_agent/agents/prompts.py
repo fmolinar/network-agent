@@ -66,11 +66,19 @@ def generator_prompt(plan: PlannerPlan, user_prompt: str, execution: ExecutionRe
     return system, json.dumps(user_payload, indent=2, sort_keys=True)
 
 
-def validator_prompt(diagnosis: Diagnosis, execution: ExecutionResult) -> tuple[str, str]:
+def validator_prompt(
+    diagnosis: Diagnosis,
+    execution: ExecutionResult,
+    user_issue_stopped: bool | None = None,
+) -> tuple[str, str]:
     system = (
         "You are ValidatorAgent for network troubleshooting. "
-        "Review diagnosis consistency and safety context. "
-        "Return strict JSON keys: verdict, confidence, notes, suggested_evidence. "
+        "Review diagnosis consistency, safety context, and whether the issue appears resolved. "
+        "If user_issue_stopped is null, ask for explicit confirmation before closure by setting "
+        "needs_user_confirmation=true and confirmation_question to a brief yes/no question. "
+        "Only mark close_chat=true when user_issue_stopped is true. "
+        "Return strict JSON keys: verdict, confidence, issue_resolved_likely, needs_user_confirmation, "
+        "confirmation_question, close_chat, closure_acknowledgement, notes, suggested_evidence. "
         "verdict must be one of: accept,caution,reject."
     )
     user_payload: dict[str, Any] = {
@@ -94,5 +102,6 @@ def validator_prompt(diagnosis: Diagnosis, execution: ExecutionResult) -> tuple[
             "host_os": execution.host_os.value,
             "network_topology": execution.network_topology,
         },
+        "user_issue_stopped": user_issue_stopped,
     }
     return system, json.dumps(user_payload, indent=2, sort_keys=True)

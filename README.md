@@ -73,6 +73,7 @@ pytest -q
    - Rule-based checks (regex, numeric thresholds, whitelist enforcement).
    - Safety gate for command controls.
    - Flags ambiguous cases for optional LLM critic (OpenAI, Anthropic, Ollama, or mock).
+   - Adds a resolution confirmation workflow: asks whether the issue stopped and only closes after user confirmation.
 4. **Executor**
    - Runs allowed read-only checks (or parses provided artifact outputs).
    - Can collect live stats on demand (`ping`, `traceroute/tracert`, `netstat`, `nslookup`, `tcpdump` where available).
@@ -145,6 +146,17 @@ Future optional integrations:
 - Numeric and structural validators for diagnosis quality
 - Human-in-the-loop required for any config-changing suggestion
 - Optional LLM critic can review ambiguous diagnoses; it does not bypass safety gates
+- Validator can request explicit user confirmation before marking a troubleshooting chat as resolved
+
+## Resolution Confirmation Flow
+- Validator returns:
+  - `needs_user_confirmation`
+  - `confirmation_question`
+  - `chat_should_close`
+  - `resolved_acknowledgement`
+- GUI asks the user if the issue has stopped.
+- When the user confirms the issue is stopped, the GUI closes the current troubleshooting chat with validator acknowledgement.
+- CLI can pass explicit confirmation to the validator with `--user-issue-stopped yes|no`.
 
 ## LLM Integration
 LLM critic is optional and disabled by default.
@@ -370,6 +382,11 @@ Packet capture duration can also be requested in the prompt, for example:
 Disable topology generation:
 ```bash
 network-agent --prompt "diagnose network issue" --skip-topology
+```
+
+Pass explicit post-remediation confirmation to validator:
+```bash
+network-agent --prompt "Issue update after remediation" --user-issue-stopped yes
 ```
 
 Approval gate:

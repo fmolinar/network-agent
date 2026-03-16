@@ -115,6 +115,7 @@ class NetworkTroubleshootingEngine:
         capture_seconds: int = 30,
         execute_proposed_commands: bool = True,
         include_topology: bool = True,
+        user_issue_stopped: bool | None = None,
         use_llm_critic: bool = False,
         capture_agent_prompts: bool = False,
         debug: bool = False,
@@ -261,6 +262,7 @@ class NetworkTroubleshootingEngine:
                 "use_llm_critic": use_llm_critic,
                 "confidence_score": diagnosis.confidence_score,
                 "proposed_commands": diagnosis.metadata.get("proposed_commands", []),
+                "user_issue_stopped": user_issue_stopped,
             },
         )
         proposed_commands = diagnosis.metadata.get("proposed_commands", [])
@@ -270,6 +272,7 @@ class NetworkTroubleshootingEngine:
             diagnosis,
             execution,
             proposed_commands=[str(c) for c in proposed_commands if str(c).strip()],
+            user_issue_stopped=user_issue_stopped,
             use_llm_critic=use_llm_critic,
         )
         self.audit.log("validator.validate", asdict(validation))
@@ -284,7 +287,7 @@ class NetworkTroubleshootingEngine:
         if capture_agent_prompts:
             planner_system, planner_user = planner_prompt(user_prompt, artifacts, self.host_os.value)
             generator_system, generator_user = generator_prompt(plan, user_prompt, execution)
-            validator_system, validator_user = validator_prompt(diagnosis, execution)
+            validator_system, validator_user = validator_prompt(diagnosis, execution, user_issue_stopped=user_issue_stopped)
             result["agent_prompts"] = {
                 "planner": {"system": planner_system, "user": planner_user},
                 "generator": {"system": generator_system, "user": generator_user},

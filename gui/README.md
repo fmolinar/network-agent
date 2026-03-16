@@ -17,6 +17,10 @@ This folder contains a desktop GUI for `network-agent` with a chat-window experi
   - you type a network issue
   - it runs `network_agent.cli`
   - it displays summary, top cause, confidence, and remediation
+- After each diagnosis, validator follow-up asks whether the issue stopped (`yes/no`)
+- If the user confirms the issue stopped, the chat closes with validator acknowledgement
+- Transcript is read-only but selectable/copyable (`Ctrl/Cmd+A`, `Ctrl/Cmd+C`, mouse selection)
+- Startup window size adapts to screen dimensions so header, controls, chat, input, and status bar are visible on open
 
 ## Prerequisites
 1. Python 3.10+
@@ -74,6 +78,7 @@ llm\spin_llm.bat llama3.2
 - `Working...` loader: visible whenever a background task is running
 - Agent command suggestions are clickable: click to copy + paste into the input box
 - Chat transcript text is selectable for copy/paste
+- After a diagnosis, reply `yes` or `no` to the validator confirmation prompt
 
 Tip: you can request capture duration directly in chat, for example:
 - `run a packet capture for 60 seconds and diagnose retransmits`

@@ -36,16 +36,22 @@ This project uses role-specific prompt templates from `src/network_agent/agents/
 
 ### System
 - Role: ValidatorAgent for consistency/safety review.
-- Task: issue verdict on diagnosis quality.
+- Task: issue verdict on diagnosis quality and handle resolution confirmation flow.
 - Output schema:
   - `verdict` (`accept`, `caution`, `reject`)
   - `confidence`
+  - `issue_resolved_likely`
+  - `needs_user_confirmation`
+  - `confirmation_question`
+  - `close_chat`
+  - `closure_acknowledgement`
   - `notes`
   - `suggested_evidence`
 
 ### User payload
 - diagnosis summary and ranked causes
 - execution context and topology
+- optional `user_issue_stopped` confirmation signal (`true`, `false`, or `null`)
 
 ## Design Notes
 - All templates request strict JSON to reduce parsing ambiguity.

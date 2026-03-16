@@ -53,6 +53,11 @@ def main() -> None:
         help="Enable optional LLM critic for ambiguous diagnoses",
     )
     parser.add_argument(
+        "--user-issue-stopped",
+        choices=["yes", "no"],
+        help="Optional user confirmation used by validator to close the troubleshooting chat",
+    )
+    parser.add_argument(
         "--enable-llm-agents",
         action="store_true",
         help="Enable LLM-assisted planner and generator agents",
@@ -135,6 +140,7 @@ def main() -> None:
         capture_seconds=max(5, min(args.capture_seconds, 300)),
         execute_proposed_commands=args.execute_proposed_commands,
         include_topology=not args.skip_topology,
+        user_issue_stopped=True if args.user_issue_stopped == "yes" else False if args.user_issue_stopped == "no" else None,
         use_llm_critic=args.enable_llm_critic,
         capture_agent_prompts=bool(args.dump_agent_prompts),
         debug=debug_enabled,

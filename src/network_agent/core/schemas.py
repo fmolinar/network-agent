@@ -49,6 +49,10 @@ class ValidationResult:
     needs_llm_critic: bool
     blocked_operations: list[str]
     llm_critic: dict[str, Any] = field(default_factory=dict)
+    needs_user_confirmation: bool = False
+    confirmation_question: str = ""
+    chat_should_close: bool = False
+    resolved_acknowledgement: str = ""
 
 
 @dataclass(slots=True)
