@@ -14,6 +14,28 @@ class Generator:
             return float(max(0.0, min(1.0, value)))
         return default
 
+    def _default_proposed_commands(self, plan: PlannerPlan) -> list[str]:
+        by_category = {
+            Category.CONNECTIVITY: ["ping 8.8.8.8", "traceroute 8.8.8.8"],
+            Category.DNS: ["nslookup example.com", "ping 1.1.1.1"],
+            Category.ROUTING: ["traceroute 8.8.8.8", "netstat -rn"],
+            Category.TRANSPORT: ["netstat -an", "tcpdump -nn"],
+            Category.SECURITY: ["netstat -an", "ping 8.8.8.8"],
+            Category.UNKNOWN: ["ping 8.8.8.8", "traceroute 8.8.8.8"],
+        }
+        windows_by_category = {
+            Category.CONNECTIVITY: ["ping 8.8.8.8", "tracert 8.8.8.8"],
+            Category.DNS: ["nslookup example.com", "ping 1.1.1.1"],
+            Category.ROUTING: ["tracert 8.8.8.8", "route print"],
+            Category.TRANSPORT: ["netstat -an", "ping 8.8.8.8"],
+            Category.SECURITY: ["netstat -an", "ping 8.8.8.8"],
+            Category.UNKNOWN: ["ping 8.8.8.8", "tracert 8.8.8.8"],
+        }
+        if plan.host_os.value == "windows":
+            return windows_by_category.get(plan.category, windows_by_category[Category.UNKNOWN])
+        commands = by_category.get(plan.category, by_category[Category.UNKNOWN])
+        return commands
+
     def _llm_generate(self, plan: PlannerPlan, user_prompt: str, execution: ExecutionResult) -> Diagnosis | None:
         if self.llm_connector is None:
             return None
@@ -58,6 +80,14 @@ class Generator:
         remediation_plan = llm_diag.get("remediation_plan", [])
         if not isinstance(remediation_plan, list) or not remediation_plan:
             remediation_plan = causes[0].remediation_steps
+        proposed_commands_raw = llm_diag.get("proposed_commands", [])
+        proposed_commands: list[str] = []
+        if isinstance(proposed_commands_raw, list):
+            for cmd in proposed_commands_raw:
+                cmd_text = str(cmd).strip()
+                if cmd_text:
+                    proposed_commands.append(cmd_text)
+        proposed_commands = proposed_commands[:10]
         problem_summary = str(
             llm_diag.get("problem_summary") or f"Category={plan.category.value} HostOS={plan.host_os.value}. {user_prompt.strip()}"
         )
@@ -73,6 +103,7 @@ class Generator:
                 "missing_checks": execution.missing_checks,
                 "host_os": plan.host_os.value,
                 "generation_mode": "llm",
+                "proposed_commands": proposed_commands,
             },
         )
 
@@ -189,6 +220,7 @@ class Generator:
                 "missing_checks": execution.missing_checks,
                 "host_os": plan.host_os.value,
                 "generation_mode": "heuristic",
+                "proposed_commands": self._default_proposed_commands(plan),
             },
         )
 

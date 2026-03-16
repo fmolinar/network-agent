@@ -11,18 +11,30 @@ def _artifact_preview(artifacts: dict[str, str], max_chars: int = 2400) -> str:
     return json.dumps(compact, indent=2, sort_keys=True)
 
 
+def _allowed_commands_for_os(host_os: str) -> list[str]:
+    by_os = {
+        "linux": ["ping", "traceroute", "nslookup", "netstat", "ip -br addr", "arp -a", "tcpdump -nn"],
+        "macos": ["ping", "traceroute", "nslookup", "netstat", "ifconfig", "arp -a", "tcpdump -nn"],
+        "windows": ["ping", "tracert", "nslookup", "netstat", "ipconfig /all", "route print", "arp -a"],
+    }
+    return by_os.get(host_os, ["ping", "traceroute", "tracert", "nslookup", "netstat", "arp -a"])
+
+
 def planner_prompt(user_prompt: str, artifacts: dict[str, str], host_os: str) -> tuple[str, str]:
     system = (
         "You are PlannerAgent for network troubleshooting. "
-        "Classify incident category and choose checks. "
+        "Classify incident category and choose checks that can trigger safe troubleshooting commands. "
         "Return strict JSON keys: category, selected_checks, rationale. "
         "category must be one of: connectivity,dns,routing,transport,security,unknown. "
         "selected_checks values may include: ping,traceroute,tracert,logs,pcap_summary,dns_trace,"
-        "routing_table,netstat,tcpdump_summary,policy_events."
+        "routing_table,netstat,tcpdump_summary,policy_events. "
+        "Prefer checks missing from artifacts so Executor can run read-only commands to gather evidence."
     )
     user = (
         f"host_os={host_os}\n"
         f"user_prompt={user_prompt}\n"
+        f"artifact_keys={sorted(artifacts.keys())}\n"
+        f"allowed_command_hints={_allowed_commands_for_os(host_os)}\n"
         f"artifacts={_artifact_preview(artifacts)}"
     )
     return system, user
@@ -32,9 +44,10 @@ def generator_prompt(plan: PlannerPlan, user_prompt: str, execution: ExecutionRe
     system = (
         "You are GeneratorAgent for network troubleshooting. "
         "Return strict JSON keys: problem_summary,candidate_causes_ranked,confidence_score,"
-        "required_evidence,remediation_plan. "
+        "required_evidence,remediation_plan,proposed_commands. "
         "candidate_causes_ranked must be an array of objects with keys: "
-        "title,confidence,required_evidence,remediation_steps."
+        "title,confidence,required_evidence,remediation_steps. "
+        "proposed_commands must be read-only troubleshooting commands compatible with host_os."
     )
     user_payload: dict[str, Any] = {
         "category": plan.category.value,
@@ -44,6 +57,7 @@ def generator_prompt(plan: PlannerPlan, user_prompt: str, execution: ExecutionRe
         "parsed_outputs": execution.parsed_outputs,
         "missing_checks": execution.missing_checks,
         "network_topology": execution.network_topology,
+        "allowed_command_hints": _allowed_commands_for_os(plan.host_os.value),
     }
     return system, json.dumps(user_payload, indent=2, sort_keys=True)
 
@@ -60,6 +74,7 @@ def validator_prompt(diagnosis: Diagnosis, execution: ExecutionResult) -> tuple[
             "problem_summary": diagnosis.problem_summary,
             "confidence_score": diagnosis.confidence_score,
             "required_evidence": diagnosis.required_evidence,
+            "proposed_commands": diagnosis.metadata.get("proposed_commands", []),
             "candidate_causes_ranked": [
                 {
                     "title": c.title,

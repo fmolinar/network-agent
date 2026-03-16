@@ -130,9 +130,21 @@ class NetworkTroubleshootingEngine:
         val_t0, val_entry = _op_start(
             "validator",
             "validate",
-            {"use_llm_critic": use_llm_critic, "confidence_score": diagnosis.confidence_score},
+            {
+                "use_llm_critic": use_llm_critic,
+                "confidence_score": diagnosis.confidence_score,
+                "proposed_commands": diagnosis.metadata.get("proposed_commands", []),
+            },
         )
-        validation = self.validator.validate(diagnosis, execution, use_llm_critic=use_llm_critic)
+        proposed_commands = diagnosis.metadata.get("proposed_commands", [])
+        if not isinstance(proposed_commands, list):
+            proposed_commands = []
+        validation = self.validator.validate(
+            diagnosis,
+            execution,
+            proposed_commands=[str(c) for c in proposed_commands],
+            use_llm_critic=use_llm_critic,
+        )
         self.audit.log("validator.validate", asdict(validation))
         _op_end(val_t0, val_entry, asdict(validation))
 

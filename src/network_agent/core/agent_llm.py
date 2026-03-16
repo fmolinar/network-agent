@@ -145,5 +145,10 @@ class AgentLLMConnector:
                     "Compare path quality from another host",
                     "Escalate with upstream ISP if persistent",
                 ],
+                "proposed_commands": [
+                    "ping 8.8.8.8",
+                    "traceroute 8.8.8.8",
+                    "netstat -an",
+                ],
             }
         return {}
